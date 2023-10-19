@@ -13,7 +13,6 @@ const db = mysql
   })
   .promise();
 
-
 async function getUsers(username) {
   const rows = await db.query(
     `
@@ -26,14 +25,6 @@ async function getUsers(username) {
   return rows[0];
 }
 
-async function updateToken(token, username) {
-  let sql = `UPDATE user_data SET token="${token}" WHERE username="${username}"`;
-  let sqlQuery = `SELECT * FROM user_data WHERE username="${username}"`;
-  await db.query(sql);
-  let result = await db.query(sqlQuery);
-  //return the latest data of user as login
-  return result[0];
-}
 
 async function getUserByName(username) {
   const [rows] = await db.query(
@@ -89,12 +80,52 @@ async function getProductsDetail(item_code) {
   );
   return rows;
 }
-//test start
 async function getTest(id) {
   const [rows] = await db.query(
     `SELECT *
 FROM order_data
 WHERE order_number = ${id}`
+  );
+  return rows[0];
+}
+
+async function updateToken(token, username) {
+  let sql = `UPDATE user_data SET token="${token}" WHERE username="${username}"`;
+  let sqlQuery = `SELECT * FROM user_data WHERE username="${username}"`;
+  await db.query(sql);
+  let result = await db.query(sqlQuery);
+  //return the latest data of user as login
+  return result[0];
+}
+
+async function updateProductsDetail(data) {
+  let id = data.item_code;
+    const sql =
+      'UPDATE inventory_data SET item_code = ?, item = ?, qty = ?, price = ?, cost = ?, category = ?, amount = ? WHERE `key` = ?';
+    const values = [
+      data.item_code,
+      data.item,
+      data.qty,
+      data.price,
+      data.cost,
+      data.category,
+      data.amount,
+      data.key,
+    ];
+  await db.query(sql, values, (error, result, fields) => {
+      if (error) {
+        console.error('Error updating inventory data:', error);
+      } else {
+        console.log('Inventory data updated successfully');
+      }
+  })
+  const [rows] = await db.query(
+    `
+    SELECT *
+    FROM inventory_data
+    WHERE item_code = ?
+    `,
+    [id]
   );
   return rows[0];
 }
@@ -108,13 +139,13 @@ async function addingDataToOrderData(
   totalAmount,
   subtotal,
   tax,
-  total
+  total,
+  casher,
 ) {
   let newItems = JSON.stringify(items);
-
   await db.query(
-    `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total, casher)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       order_number,
       newItems,
@@ -125,11 +156,11 @@ async function addingDataToOrderData(
       subtotal,
       tax,
       total,
+      casher,
     ]
   );
   return;
 }
-//test end
 
 async function addOrder(order) {
   const [rows] = await db.query(
@@ -139,6 +170,7 @@ async function addOrder(order) {
     [order]
   );
 }
+
 
 const verifyJwt = (token) => {
   try {
@@ -155,6 +187,7 @@ module.exports = {
   getUsers,
   updateToken,
   getUserByName,
+  updateProductsDetail,
   getAllOrderHistory,
   getInventoryData,
   getProductsDetail,

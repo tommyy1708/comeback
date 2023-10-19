@@ -7,6 +7,7 @@ const {
   verifyJwt,
   updateToken,
   getUserByName,
+  updateProductsDetail,
   getAllOrderHistory,
   getInventoryData,
   getProductsDetail,
@@ -23,42 +24,50 @@ app.use(cors());
 //allow app using json format in the createNote function
 app.use(express.json());
 
-//verify token 
+//verify token
 app.get(`/api/verify`, async (req, res) => {
   const token = req.header('Authorization');
   try {
     jwt.verify(token, 'laoniu');
-      res.send({
-        errCode: 0,
-        status: true,
-      });
+    res.send({
+      errCode: 0,
+      status: true,
+    });
   } catch (err) {
     res.send({
       errCode: 1,
       status: false,
-      message:err.message,
+      message: err.message,
     });
   }
 });
 
-
-app.post(`/api/finished`, async (req, res) => {
-  const { cartData } = req.body;
-  const data = JSON.parse(cartData);
-  const result = await addingDataToOrderData(
-    data.order_number,
-    data.items,
-    data.date,
-    data.client,
-    data.discount,
-    data.totalAmount,
-    data.subtotal,
-    data.tax,
-    data.total
-  );
-  res.send({
-    message: 'clicked print',
-  });
+app.post(`/api/shopping-cart`, async (req, res) => {
+  try {
+    const { cartData } = req.body;
+    const data = JSON.parse(cartData);
+    const result = await addingDataToOrderData(
+      data.order_number,
+      data.items,
+      data.date,
+      data.client,
+      data.discount,
+      data.totalAmount,
+      data.subtotal,
+      data.tax,
+      data.total,
+      data.casher
+    );
+    res.send({
+      errCode: 0,
+      message: 'Printed!',
+    });
+  } catch (err) {
+    res.send({
+      errCode: 1,
+      message: err,
+    });
+  }
 });
 
 app.post('/api/login', async (req, res) => {
@@ -135,6 +144,28 @@ app.get('/api/users', async (req, res) => {
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
+});
+
+app.put('/api/products/update', async (req, res) => {
+  try {
+    const idAndData = req.body;
+    const itemCode = idAndData.id;
+    const itemData = idAndData.data;
+    let oldData = await getProductsDetail(itemCode);
+    //update data right here;
+    let newData = { ...oldData[0], ...itemData };
+    let result = await updateProductsDetail(newData);
+
+    res.send({
+      errCode: 0,
+      message: 'success',
+    });
+  } catch (err) {
+    res.send({
+      errCode: 1,
+      message: err,
+    });
+  }
 });
 
 app.listen(8000, () => {
