@@ -6,6 +6,7 @@ const {
   getUsers,
   verifyJwt,
   updateToken,
+  getClientData,
   getUserByName,
   updateProductsDetail,
   getAllOrderHistory,
@@ -159,6 +160,37 @@ app.put('/api/products/update', async (req, res) => {
     res.send({
       errCode: 0,
       message: 'success',
+    });
+  } catch (err) {
+    res.send({
+      errCode: 1,
+      message: err,
+    });
+  }
+});
+
+app.post('/api/client', async (req, res) => {
+  try {
+    const { data } = req.body;
+    res.send({
+      errCode: 0,
+      message: 'Success!',
+    });
+  } catch (err) {
+    res.send({
+      errCode: 1,
+      message: err,
+    });
+  }
+});
+
+app.get('/api/client', async (req, res) => {
+  try {
+    let data = await getClientData();
+    res.send({
+      errCode: 0,
+      data: data,
+      message: 'Success!',
     });
   } catch (err) {
     res.send({

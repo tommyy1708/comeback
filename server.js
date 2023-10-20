@@ -25,7 +25,6 @@ async function getUsers(username) {
   return rows[0];
 }
 
-
 async function getUserByName(username) {
   const [rows] = await db.query(
     `
@@ -100,25 +99,25 @@ async function updateToken(token, username) {
 
 async function updateProductsDetail(data) {
   let id = data.item_code;
-    const sql =
-      'UPDATE inventory_data SET item_code = ?, item = ?, qty = ?, price = ?, cost = ?, category = ?, amount = ? WHERE `key` = ?';
-    const values = [
-      data.item_code,
-      data.item,
-      data.qty,
-      data.price,
-      data.cost,
-      data.category,
-      data.amount,
-      data.key,
-    ];
+  const sql =
+    'UPDATE inventory_data SET item_code = ?, item = ?, qty = ?, price = ?, cost = ?, category = ?, amount = ? WHERE `key` = ?';
+  const values = [
+    data.item_code,
+    data.item,
+    data.qty,
+    data.price,
+    data.cost,
+    data.category,
+    data.amount,
+    data.key,
+  ];
   await db.query(sql, values, (error, result, fields) => {
-      if (error) {
-        console.error('Error updating inventory data:', error);
-      } else {
-        console.log('Inventory data updated successfully');
-      }
-  })
+    if (error) {
+      console.error('Error updating inventory data:', error);
+    } else {
+      console.log('Inventory data updated successfully');
+    }
+  });
   const [rows] = await db.query(
     `
     SELECT *
@@ -140,7 +139,7 @@ async function addingDataToOrderData(
   subtotal,
   tax,
   total,
-  casher,
+  casher
 ) {
   let newItems = JSON.stringify(items);
   await db.query(
@@ -162,15 +161,12 @@ async function addingDataToOrderData(
   return;
 }
 
-async function addOrder(order) {
-  const [rows] = await db.query(
-    `INSERT INTO order_data
-    VALUES (value1);
-`,
-    [order]
-  );
-}
+async function getClientData() {
+  let sql = 'SELECT * FROM client_data';
+  const result = await db.query(sql);
 
+  return result[0];
+}
 
 const verifyJwt = (token) => {
   try {
@@ -185,6 +181,7 @@ module.exports = {
   verifyJwt,
   getTest,
   getUsers,
+  getClientData,
   updateToken,
   getUserByName,
   updateProductsDetail,
