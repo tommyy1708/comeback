@@ -8,6 +8,8 @@ const {
   updateToken,
   getClientData,
   getUserByName,
+  addingNewClient,
+  updateInventory,
   updateProductsDetail,
   getAllOrderHistory,
   getInventoryData,
@@ -168,18 +170,38 @@ app.put('/api/products/update', async (req, res) => {
     });
   }
 });
+//update stock of items
+app.post('/api/shopping-cart/update', async (req, res) => {
+  const { data, token } = req.body;
+  let result = await verifyJwt(token);
+  if (!result) {
+    return res.send({
+      errCode: 1,
+      message: 'Token Expired',
+    });
+  } else {
+    data.forEach((element) => {
+      updateInventory(element.amount, element.item_code);
+    });
+    await getInventoryData();
+    res.send({
+      errCode: 0,
+      message: 'updated',
+    });
+  }
+});
 
 app.post('/api/client', async (req, res) => {
   try {
-    const { data } = req.body;
+   let result = await addingNewClient(req.body);
     res.send({
       errCode: 0,
       message: 'Success!',
     });
-  } catch (err) {
+  } catch (error) {
     res.send({
       errCode: 1,
-      message: err,
+      message: error,
     });
   }
 });

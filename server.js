@@ -79,6 +79,7 @@ async function getProductsDetail(item_code) {
   );
   return rows;
 }
+
 async function getTest(id) {
   const [rows] = await db.query(
     `SELECT *
@@ -168,6 +169,36 @@ async function getClientData() {
   return result[0];
 }
 
+async function addingNewClient(data) {
+  const { name, phone, address, type } = data;
+  let sql = `INSERT INTO client_data (name, phone, address, type)
+    VALUES (?, ?, ?, ?)`;
+  let values = [name, phone, address, type];
+  await db.query(sql, values , (error, result, fields) => {
+         if (error) {
+      console.error('Error updating client data:', error);
+    } else {
+      console.log('Client data updated successfully');
+    }}
+    );
+  return;
+}
+
+async function updateInventory(qty, item_code) {
+  let sql = `UPDATE inventory_data SET qty = qty - ?
+  WHERE item_code = ?`;
+
+  let values = [qty, item_code];
+
+  db.query(sql, values, (error, result, fields) => {
+    if (error) {
+      console.error('Error updating inventory data:', error);
+    } else {
+      console.log('Inventory data updated successfully');
+    }
+  });
+}
+
 const verifyJwt = (token) => {
   try {
     jwt.verify(token, 'laoniu');
@@ -183,6 +214,8 @@ module.exports = {
   getUsers,
   getClientData,
   updateToken,
+  updateInventory,
+  addingNewClient,
   getUserByName,
   updateProductsDetail,
   getAllOrderHistory,
