@@ -174,13 +174,13 @@ async function addingNewClient(data) {
   let sql = `INSERT INTO client_data (name, phone, address, type)
     VALUES (?, ?, ?, ?)`;
   let values = [name, phone, address, type];
-  await db.query(sql, values , (error, result, fields) => {
-         if (error) {
+  await db.query(sql, values, (error, result, fields) => {
+    if (error) {
       console.error('Error updating client data:', error);
     } else {
       console.log('Client data updated successfully');
-    }}
-    );
+    }
+  });
   return;
 }
 
@@ -199,9 +199,87 @@ async function updateInventory(qty, item_code) {
   });
 }
 
+// start
+async function addSpendOnClient(newOrderData) {
+  const clientName = newOrderData.clientName;
+  const clientSpend = newOrderData.clientSpend;
+  let nameValue = [clientName];
+
+  //Inquire if client already exists
+  let sqlClientExists = `SELECT * FROM client_data
+  WHERE name = ?`;
+  let existsResult = await db.query(
+    sqlClientExists,
+    nameValue,
+    (error, result, fields) => {
+      if (error) {
+        console.error('Error updating client_data data:', error);
+      } else {
+        console.log('Client data updated successfully');
+      }
+    }
+  );
+
+  // update for exists client
+  if (existsResult[0].length > 0) {
+    let sql = `UPDATE client_data SET spend = spend + ?
+  WHERE name = ?`;
+    let updateValues = [clientSpend, clientName];
+    let updateResultData = await db.query(
+      sql,
+      updateValues,
+      (error, result, fields) => {
+        if (error) {
+          console.error('Error updating inventory data:', error);
+        } else {
+          console.log('Inventory data updated successfully');
+        }
+      }
+    );
+  } else {
+    // if client name not in database then add it into
+    let sqlAddNew = `INSERT INTO client_data (name)
+    VALUES (?)`;
+    let addNewClientResult = await db.query(
+      sqlAddNew,
+      nameValue,
+      (error, result, fields) => {
+        if (error) {
+          console.error('Error updating inventory data:', error);
+        } else {
+          console.log('Inventory data updated successfully');
+        }
+      }
+    );
+    //Inquire and refreshing database
+    let refreshing = await getClientData();
+
+    let spendValue = [clientSpend, clientName]; // total of order and client name
+
+    //if client name not in database then add spend in to this client
+    let sqlSpend = `UPDATE client_data SET spend = spend + ?
+  WHERE name = ?`;
+    let addSpend = await db.query(
+      sqlSpend,
+      spendValue,
+      (error, result, fields) => {
+        if (error) {
+          console.error('Error updating inventory data:', error);
+        } else {
+          console.log('Inventory data updated successfully');
+        }
+        console.log(spendValue);
+      }
+    );
+    //Inquire and refreshing database
+    let refreshing_again = await getClientData();
+  }
+}
+// end
+
 const verifyJwt = (token) => {
   try {
-    jwt.verify(token, 'laoniu');
+    jwt.verify(token, process.env.SECRET);
   } catch (err) {
     return false;
   }
@@ -216,6 +294,7 @@ module.exports = {
   updateToken,
   updateInventory,
   addingNewClient,
+  addSpendOnClient,
   getUserByName,
   updateProductsDetail,
   getAllOrderHistory,

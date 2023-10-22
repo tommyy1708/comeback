@@ -10,6 +10,7 @@ const {
   getUserByName,
   addingNewClient,
   updateInventory,
+  addSpendOnClient,
   updateProductsDetail,
   getAllOrderHistory,
   getInventoryData,
@@ -170,6 +171,7 @@ app.put('/api/products/update', async (req, res) => {
     });
   }
 });
+
 //update stock of items
 app.post('/api/shopping-cart/update', async (req, res) => {
   const { data, token } = req.body;
@@ -222,6 +224,22 @@ app.get('/api/client', async (req, res) => {
   }
 });
 
+// Api for AddSpendOnClient
+app.post('/api/shopping-cart/client_update/', async (req, res) => {
+   try {
+     let returnData =  await addSpendOnClient(req.body);
+     res.send({
+       errCode: 0,
+       result: returnData,
+       message: 'Success!',
+     });
+   } catch (err) {
+     res.send({
+       errCode: 1,
+       message: err,
+     });
+   }
+});
 app.listen(8000, () => {
   console.log(`Example app listening on port 8000`);
 });
