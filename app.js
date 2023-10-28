@@ -2,7 +2,6 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const {
-  getTest,
   getUsers,
   verifyJwt,
   updateToken,
@@ -11,6 +10,7 @@ const {
   addingNewClient,
   updateInventory,
   addSpendOnClient,
+  addInventoryData,
   updateProductsDetail,
   getAllOrderHistory,
   getInventoryData,
@@ -60,7 +60,8 @@ app.post(`/api/shopping-cart`, async (req, res) => {
       data.subtotal,
       data.tax,
       data.total,
-      data.casher
+      data.casher,
+      data.method
     );
     res.send({
       errCode: 0,
@@ -233,13 +234,32 @@ app.post('/api/shopping-cart/client_update/', async (req, res) => {
        result: returnData,
        message: 'Success!',
      });
-   } catch (err) {
+   } catch (error) {
      res.send({
        errCode: 1,
-       message: err,
+       message: error,
      });
    }
 });
+
+//Api for add new inventory
+app.post('/api/add-inventory', async (req, res) => {
+  try {
+    console.log('🚀 ~ file: app.js:249 ~ app.post ~ data:', req.body);
+    // let result = await addInventoryData(req.body);
+    res.send({
+      errCode: 0,
+      result: req.body,
+      message: 'Success!',
+    });
+  } catch (error) {
+    res.send({
+      errCode: 1,
+      message: error,
+    });
+  }
+});
+
 app.listen(8000, () => {
   console.log(`Example app listening on port 8000`);
 });

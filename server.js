@@ -80,15 +80,6 @@ async function getProductsDetail(item_code) {
   return rows;
 }
 
-async function getTest(id) {
-  const [rows] = await db.query(
-    `SELECT *
-FROM order_data
-WHERE order_number = ${id}`
-  );
-  return rows[0];
-}
-
 async function updateToken(token, username) {
   let sql = `UPDATE user_data SET token="${token}" WHERE username="${username}"`;
   let sqlQuery = `SELECT * FROM user_data WHERE username="${username}"`;
@@ -140,12 +131,13 @@ async function addingDataToOrderData(
   subtotal,
   tax,
   total,
-  casher
+  casher,
+  method
 ) {
   let newItems = JSON.stringify(items);
   await db.query(
-    `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total, casher)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total, casher, method)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       order_number,
       newItems,
@@ -157,6 +149,7 @@ async function addingDataToOrderData(
       tax,
       total,
       casher,
+      method,
     ]
   );
   return;
@@ -199,7 +192,6 @@ async function updateInventory(qty, item_code) {
   });
 }
 
-// start
 async function addSpendOnClient(newOrderData) {
   const clientName = newOrderData.clientName;
   const clientSpend = newOrderData.clientSpend;
@@ -268,14 +260,38 @@ async function addSpendOnClient(newOrderData) {
         } else {
           console.log('Inventory data updated successfully');
         }
-        console.log(spendValue);
       }
     );
     //Inquire and refreshing database
-    let refreshing_again = await getClientData();
+    await getClientData();
   }
 }
 // end
+
+//Start add new data into addNewInventoryData table
+async function addInventoryData(data) {
+  let sql = `INSERT INTO add_inventory_data (item_code, item, qty, cost)
+  VALUES (?, ?, ?, ?)`;
+  let values = [data.item_code, data.item, data.qty, data.cost];
+  let result = await db.query(
+    sql,
+    values,
+    (error, result, fields) => {
+      if (error) {
+        console.error('Error add inventory data:', error);
+      } else {
+        console.log('Inventory data add successfully');
+        let fresh = 'SELECT * FROM add_inventory_data';
+        db.query(fresh);
+      }
+    }
+  );
+  // let selectedItem = `SELECT qty, cost FROM inventory_data WHERE item_code = ?`, [data.item_code];
+
+  // let selectedItem = `UPDATE inventory_data SET qty = qty + ?,
+  // WHERE name = ?`, [data.item_code];
+}
+//End
 
 const verifyJwt = (token) => {
   try {
@@ -288,13 +304,13 @@ const verifyJwt = (token) => {
 
 module.exports = {
   verifyJwt,
-  getTest,
   getUsers,
   getClientData,
   updateToken,
   updateInventory,
   addingNewClient,
   addSpendOnClient,
+  addInventoryData,
   getUserByName,
   updateProductsDetail,
   getAllOrderHistory,
