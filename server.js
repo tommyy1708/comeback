@@ -270,10 +270,16 @@ async function addSpendOnClient(newOrderData) {
 
 //Start add new data into addNewInventoryData table
 async function addInventoryData(data) {
-  let sql = `INSERT INTO add_inventory_data (item_code, item, qty, cost)
-  VALUES (?, ?, ?, ?)`;
-  let values = [data.item_code, data.item, data.qty, data.cost];
-  let result = await db.query(
+  let sql = `INSERT INTO add_inventory_data (item_code, item, qty, cost, date)
+  VALUES (?, ?, ?, ?, ?)`;
+  let values = [
+    data.item_code,
+    data.item,
+    data.qty,
+    data.cost,
+    data.date,
+  ];
+  await db.query(
     sql,
     values,
     (error, result, fields) => {
@@ -281,17 +287,29 @@ async function addInventoryData(data) {
         console.error('Error add inventory data:', error);
       } else {
         console.log('Inventory data add successfully');
-        let fresh = 'SELECT * FROM add_inventory_data';
-        db.query(fresh);
       }
     }
-  );
-  // let selectedItem = `SELECT qty, cost FROM inventory_data WHERE item_code = ?`, [data.item_code];
+  )
+  let fresh = 'SELECT * FROM add_inventory_data';
+  await db.query(fresh);
 
-  // let selectedItem = `UPDATE inventory_data SET qty = qty + ?,
-  // WHERE name = ?`, [data.item_code];
+  return;
 }
 //End
+
+//Start get data addNewInventoryData table
+async function getDataFromAddInventory(id) {
+  let sql = `SELECT * FROM add_inventory_data WHERE item_code = ?`;
+  let values = [id];
+  let result = await db.query(sql, values, (error, result, fields) => {
+    if (error) {
+      console.error('Error from inquire to inventory data:', error);
+    } else {
+      console.log('Inventory data add successfully');
+    }
+  });
+  return result;
+}
 
 const verifyJwt = (token) => {
   try {
@@ -311,6 +329,7 @@ module.exports = {
   addingNewClient,
   addSpendOnClient,
   addInventoryData,
+  getDataFromAddInventory,
   getUserByName,
   updateProductsDetail,
   getAllOrderHistory,

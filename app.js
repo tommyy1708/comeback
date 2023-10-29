@@ -13,6 +13,7 @@ const {
   addInventoryData,
   updateProductsDetail,
   getAllOrderHistory,
+  getDataFromAddInventory,
   getInventoryData,
   getProductsDetail,
   getOrderByNumber,
@@ -196,7 +197,7 @@ app.post('/api/shopping-cart/update', async (req, res) => {
 
 app.post('/api/client', async (req, res) => {
   try {
-   let result = await addingNewClient(req.body);
+    let result = await addingNewClient(req.body);
     res.send({
       errCode: 0,
       message: 'Success!',
@@ -227,35 +228,83 @@ app.get('/api/client', async (req, res) => {
 
 // Api for AddSpendOnClient
 app.post('/api/shopping-cart/client_update/', async (req, res) => {
-   try {
-     let returnData =  await addSpendOnClient(req.body);
-     res.send({
-       errCode: 0,
-       result: returnData,
-       message: 'Success!',
-     });
-   } catch (error) {
-     res.send({
-       errCode: 1,
-       message: error,
-     });
-   }
-});
-
-//Api for add new inventory
-app.post('/api/add-inventory', async (req, res) => {
   try {
-    console.log('🚀 ~ file: app.js:249 ~ app.post ~ data:', req.body);
-    // let result = await addInventoryData(req.body);
+    let returnData = await addSpendOnClient(req.body);
     res.send({
       errCode: 0,
-      result: req.body,
+      result: returnData,
       message: 'Success!',
     });
   } catch (error) {
     res.send({
       errCode: 1,
       message: error,
+    });
+  }
+});
+
+//Api for add new inventory
+app.post('/api/add-inventory', async (req, res) => {
+  console.log(req.body);
+  await addInventoryData(req.body);
+  try {
+    res.send({
+      errCode: 0,
+      message: 'Success!',
+    });
+  } catch (error) {
+    res.send({
+      errCode: 1,
+      message: error,
+    });
+  }
+});
+
+//Api for got data from add_inventory_list
+app.get('/api/add-inventory', async (req, res) => {
+  try {
+    let id = req.query.item_code;
+    let result = await getDataFromAddInventory(id);
+
+    res.send({
+      errCode: 0,
+      data: result[0],
+      message: 'Success!',
+    });
+  } catch (error) {
+    res.send({
+      errCode: 1,
+      message: 'Something Wrong!',
+    });
+  }
+});
+
+//Api for asynchronous data
+app.put('/api/add-inventory', async (req, res) => {
+  try {
+    const idAndData = req.body;
+    const itemId = idAndData.item_code;
+    const itemQty = idAndData.qty;
+    const itemCost = idAndData.cost;
+    let oldData = await getProductsDetail(itemId);
+    const oldQty = oldData[0].qty;
+    const oldCost = oldData[0].price;
+    const newQty = parseInt(oldQty) + parseInt(itemQty);
+    const preTotal = parseInt(oldQty) * parseFloat(oldCost);
+    const newTotal = parseFloat(itemCost) * parseInt(itemQty);
+    const newCost =
+      (parseFloat(preTotal) + parseFloat(newTotal)) /
+      parseInt(newQty);
+    let newData = { ...oldData[0], cost: newCost, qty: newQty };
+    await updateProductsDetail(newData);
+    res.send({
+      errCode: 0,
+      message: 'success',
+    });
+  } catch (err) {
+    res.send({
+      errCode: 1,
+      message: err,
     });
   }
 });
