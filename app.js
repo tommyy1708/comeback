@@ -284,18 +284,23 @@ app.put('/api/add-inventory', async (req, res) => {
   try {
     const idAndData = req.body;
     const itemId = idAndData.item_code;
-    const itemQty = idAndData.qty;
-    const itemCost = idAndData.cost;
     let oldData = await getProductsDetail(itemId);
+
+    const addQty = idAndData.qty;
+    console.log("🚀 ~ file: app.js:290 ~ app.put ~ addQty:", addQty)
+    const addCost = idAndData.cost;
+    console.log("🚀 ~ file: app.js:292 ~ app.put ~ addCost:", addCost)
     const oldQty = oldData[0].qty;
-    const oldCost = oldData[0].price;
-    const newQty = parseInt(oldQty) + parseInt(itemQty);
+    console.log("🚀 ~ file: app.js:294 ~ app.put ~ oldQty:", oldQty)
+    const oldCost = oldData[0].cost;
+    console.log("🚀 ~ file: app.js:296 ~ app.put ~ oldCost:", oldCost)
+    const newQty = parseInt(oldQty) + parseInt(addQty);
     const preTotal = parseInt(oldQty) * parseFloat(oldCost);
-    const newTotal = parseFloat(itemCost) * parseInt(itemQty);
+    const newTotal = parseFloat(addCost) * parseInt(addQty);
     const newCost =
       (parseFloat(preTotal) + parseFloat(newTotal)) /
       parseInt(newQty);
-    let newData = { ...oldData[0], cost: newCost, qty: newQty };
+    let newData = { ...oldData[0], cost: newCost.toFixed(2), qty: newQty };
     await updateProductsDetail(newData);
     res.send({
       errCode: 0,
