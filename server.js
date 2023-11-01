@@ -176,7 +176,7 @@ async function addingNewClient(data) {
   });
   return;
 }
-
+//minus qty at inventory_data
 async function updateInventory(qty, item_code) {
   let sql = `UPDATE inventory_data SET qty = qty - ?
   WHERE item_code = ?`;
@@ -190,7 +190,12 @@ async function updateInventory(qty, item_code) {
       console.log('Inventory data updated successfully');
     }
   });
+  let fresh = 'SELECT * FROM inventory_data';
+  await db.query(fresh);
+  return;
 }
+
+
 
 async function addSpendOnClient(newOrderData) {
   const clientName = newOrderData.clientName;
@@ -245,6 +250,7 @@ async function addSpendOnClient(newOrderData) {
     );
     //Inquire and refreshing database
     let refreshing = await getClientData();
+
 
     let spendValue = [clientSpend, clientName]; // total of order and client name
 
@@ -308,7 +314,45 @@ async function getDataFromAddInventory(id) {
       console.log('Inventory data add successfully');
     }
   });
+
   return result;
+}
+
+//Got data from addNewInventoryData by key
+async function getDataAddInventoryByKey(key) {
+  let values = [key];
+  let sql = 'SELECT * FROM add_inventory_data WHERE `key` = ?';
+  let result = await db.query(
+    sql,
+    values,
+    (error, result, fields) => {
+      if (error) {
+        console.error('Error from inquire to inventory data:', error);
+      } else {
+        console.log('Inventory data add successfully');
+      }
+    }
+  )
+
+  return result[0];
+}
+
+//minus qty at add_inventory_data
+async function updateAddInventory(qty, key) {
+  let sql = 'UPDATE add_inventory_data SET qty = qty - ? WHERE `key` = ?';
+
+  let values = [qty, key];
+
+let response = await db.query(sql, values, (error, result, fields) => {
+    if (error) {
+      console.error('Error updating inventory data:', error);
+    } else {
+      console.log('Inventory data updated successfully');
+    }
+  });
+  let fresh = 'SELECT * FROM add_inventory_data';
+  await db.query(fresh);
+  return response[0];
 }
 
 const verifyJwt = (token) => {
@@ -330,6 +374,8 @@ module.exports = {
   addSpendOnClient,
   addInventoryData,
   getDataFromAddInventory,
+  getDataAddInventoryByKey,
+  updateAddInventory,
   getUserByName,
   updateProductsDetail,
   getAllOrderHistory,

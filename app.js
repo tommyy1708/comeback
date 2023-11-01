@@ -13,7 +13,9 @@ const {
   addInventoryData,
   updateProductsDetail,
   getAllOrderHistory,
+  getDataAddInventoryByKey,
   getDataFromAddInventory,
+  updateAddInventory,
   getInventoryData,
   getProductsDetail,
   getOrderByNumber,
@@ -28,7 +30,10 @@ app.use(cors());
 
 //allow app using json format in the createNote function
 app.use(express.json());
-
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
 //verify token
 app.get(`/api/verify`, async (req, res) => {
   const token = req.header('Authorization');
@@ -147,11 +152,6 @@ app.get('/api/users', async (req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
-
 app.put('/api/products/update', async (req, res) => {
   try {
     const idAndData = req.body;
@@ -245,7 +245,6 @@ app.post('/api/shopping-cart/client_update/', async (req, res) => {
 
 //Api for add new inventory
 app.post('/api/add-inventory', async (req, res) => {
-  console.log(req.body);
   await addInventoryData(req.body);
   try {
     res.send({
@@ -287,20 +286,20 @@ app.put('/api/add-inventory', async (req, res) => {
     let oldData = await getProductsDetail(itemId);
 
     const addQty = idAndData.qty;
-    console.log("🚀 ~ file: app.js:290 ~ app.put ~ addQty:", addQty)
     const addCost = idAndData.cost;
-    console.log("🚀 ~ file: app.js:292 ~ app.put ~ addCost:", addCost)
     const oldQty = oldData[0].qty;
-    console.log("🚀 ~ file: app.js:294 ~ app.put ~ oldQty:", oldQty)
     const oldCost = oldData[0].cost;
-    console.log("🚀 ~ file: app.js:296 ~ app.put ~ oldCost:", oldCost)
     const newQty = parseInt(oldQty) + parseInt(addQty);
     const preTotal = parseInt(oldQty) * parseFloat(oldCost);
     const newTotal = parseFloat(addCost) * parseInt(addQty);
     const newCost =
       (parseFloat(preTotal) + parseFloat(newTotal)) /
       parseInt(newQty);
-    let newData = { ...oldData[0], cost: newCost.toFixed(2), qty: newQty };
+    let newData = {
+      ...oldData[0],
+      cost: newCost.toFixed(2),
+      qty: newQty,
+    };
     await updateProductsDetail(newData);
     res.send({
       errCode: 0,
@@ -312,6 +311,27 @@ app.put('/api/add-inventory', async (req, res) => {
       message: err,
     });
   }
+});
+
+//Api for modify add_inventory_data
+app.put('/api/add-inventory-modify', async (req, res) => {
+  try {
+    const idAndData = req.body;
+    const itemId = idAndData.item_code;
+    const key = idAndData.data.key;
+    let response = await getDataAddInventoryByKey(key);
+    const oldQty = response[0].qty;
+    const newQty = idAndData.data.qty;
+    const updataQty = oldQty - newQty;
+
+    await updateInventory(updataQty, itemId);
+    let response2 = await updateAddInventory(updataQty, key);
+
+    res.send({
+      errCode: 0,
+      message: 'Success',
+    });
+  } catch (error) {}
 });
 
 app.listen(8000, () => {
