@@ -10,6 +10,7 @@ const {
   addingNewClient,
   updateInventory,
   addSpendOnClient,
+  getTotalCost,
   addInventoryData,
   updateProductsDetail,
   getAllOrderHistory,
@@ -331,7 +332,28 @@ app.put('/api/add-inventory-modify', async (req, res) => {
       errCode: 0,
       message: 'Success',
     });
-  } catch (error) {}
+  } catch (error) {
+    res.send({
+      errCode: 1,
+      message: error,
+    });
+  }
+});
+//get total cost
+app.get('/api/total-cost', async (req, res) => {
+  try {
+    let totalCost = await getTotalCost();
+    res.send({
+      errCode: 0,
+      data: totalCost[0],
+      message: 'Success',
+    });
+  } catch (error) {
+    res.send({
+      errCode: 1,
+      message: error,
+    });
+  }
 });
 
 app.listen(8000, () => {

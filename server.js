@@ -355,6 +355,13 @@ let response = await db.query(sql, values, (error, result, fields) => {
   return response[0];
 }
 
+//get total cost
+async function getTotalCost() {
+  let sql = 'SELECT SUM(qty * cost) AS total_cost FROM inventory_data'
+let data =  await db.query(sql);
+  return data[0];
+}
+
 const verifyJwt = (token) => {
   try {
     jwt.verify(token, process.env.SECRET);
@@ -369,6 +376,7 @@ module.exports = {
   getUsers,
   getClientData,
   updateToken,
+  getTotalCost,
   updateInventory,
   addingNewClient,
   addSpendOnClient,
