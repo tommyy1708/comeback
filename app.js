@@ -11,6 +11,7 @@ const {
   updateInventory,
   addSpendOnClient,
   getTotalCost,
+  getAllInventory,
   addInventoryData,
   updateProductsDetail,
   getAllOrderHistory,
@@ -37,8 +38,18 @@ app.use((err, req, res, next) => {
 });
 //verify token
 app.get(`/api/verify`, async (req, res) => {
-  const token = req.header('Authorization');
+  const authorizeHeader = req.header('Authorization');
   try {
+    if (!authorizeHeader || !authorizeHeader.startsWith('Bearer ')) {
+      return res.send({
+        errCode: 1,
+        status: false,
+        message: 'no authorization Bearer received',
+      });
+    }
+
+    const token = authorizeHeader.slice(7);
+
     jwt.verify(token, 'laoniu');
     res.send({
       errCode: 0,
@@ -111,22 +122,36 @@ app.post('/api/login', async (req, res) => {
   return;
 });
 
-app.post('/api/products/:id', async (req, res) => {
-  const { item_code } = req.body;
+app.get('/api/products/:id', async (req, res) => {
+  const item_code  = req.params.id;
   const productDetail = await getProductsDetail(item_code);
-  res.status(200).send({
-    errCode: 0,
-    productDetail,
-  });
+  if (productDetail.length > 0) {
+    res.send({
+      errCode: 0,
+      productDetail,
+    });
+  } else {
+    res.send({
+      errCode: 1,
+      message:'Something wrong!',
+    });
+  }
 });
 
-app.post(`/api/order_history/order_detail/:id`, async (req, res) => {
-  const { order_number } = req.body;
-  const orderDetail = await getOrderByNumber(order_number);
-  res.status(200).send({
-    errCode: 0,
-    orderDetail,
-  });
+app.get('/api/order_history/order_detail/:id', async (req, res) => {
+  const id = req.params.id;
+  const orderDetail = await getOrderByNumber(id);
+  if (orderDetail) {
+    res.send({
+      errCode: 0,
+      orderDetail,
+    });
+  } else {
+    res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  }
 });
 
 app.get('/api/order_history', async (req, res) => {
@@ -260,11 +285,29 @@ app.post('/api/add-inventory', async (req, res) => {
   }
 });
 
-//Api for got data from add_inventory_list
-app.get('/api/add-inventory', async (req, res) => {
+//Api for get all data from inventory
+app.get('/api/get-all-inventory', async (req, res) => {
+  const result = await getAllInventory();
   try {
-    let id = req.query.item_code;
-    let result = await getDataFromAddInventory(id);
+    if (result) {
+      res.send({
+        errCode: 0,
+        data: result,
+      });
+    }
+  } catch (error) {
+    res.send({
+      errCode: 1,
+      message: error,
+    });
+  }
+});
+
+//Api for got data from add_inventory_list
+app.get('/api/add-inventory/:id', async (req, res) => {
+  try {
+    let item_code = req.params.id;
+    let result = await getDataFromAddInventory(item_code);
 
     res.send({
       errCode: 0,

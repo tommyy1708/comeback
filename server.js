@@ -58,6 +58,15 @@ async function getAllOrderHistory() {
   );
   return rows;
 }
+async function getAllInventory() {
+  const [rows] = await db.query(
+    `
+    SELECT *
+    FROM inventory_data
+    `
+  );
+  return rows;
+}
 
 async function getInventoryData() {
   const [rows] = await db.query(
@@ -276,14 +285,15 @@ async function addSpendOnClient(newOrderData) {
 
 //Start add new data into addNewInventoryData table
 async function addInventoryData(data) {
-  let sql = `INSERT INTO add_inventory_data (item_code, item, qty, cost, date)
-  VALUES (?, ?, ?, ?, ?)`;
+  let sql = `INSERT INTO add_inventory_data (item_code, item, qty, cost, date,casher)
+  VALUES (?, ?, ?, ?, ?, ?)`;
   let values = [
     data.item_code,
     data.item,
     data.qty,
     data.cost,
     data.date,
+    data.casher,
   ];
   await db.query(
     sql,
@@ -381,6 +391,7 @@ module.exports = {
   addingNewClient,
   addSpendOnClient,
   addInventoryData,
+  getAllInventory,
   getDataFromAddInventory,
   getDataAddInventoryByKey,
   updateAddInventory,
