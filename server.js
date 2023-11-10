@@ -372,6 +372,23 @@ let data =  await db.query(sql);
   return data[0];
 }
 
+//add new item into inventory_data
+async function addingNewToInventory(data) {
+  try{
+    const response =  await db.query(
+       `INSERT INTO inventory_data (item_code, item, qty, price, cost, category, amount)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       [data.item_code, data.item, data.qty, data.price, data.cost, data.category, data.amount]
+    )
+    if (!response) {
+      console.log('no response')
+    }
+    return true;
+  } catch (error) {
+    return error;
+ }
+}
+
 const verifyJwt = (token) => {
   try {
     jwt.verify(token, process.env.SECRET);
@@ -391,6 +408,7 @@ module.exports = {
   addingNewClient,
   addSpendOnClient,
   addInventoryData,
+  addingNewToInventory,
   getAllInventory,
   getDataFromAddInventory,
   getDataAddInventoryByKey,

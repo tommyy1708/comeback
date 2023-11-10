@@ -18,6 +18,7 @@ const {
   getDataAddInventoryByKey,
   getDataFromAddInventory,
   updateAddInventory,
+  addingNewToInventory,
   getInventoryData,
   getProductsDetail,
   getOrderByNumber,
@@ -123,7 +124,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.get('/api/products/:id', async (req, res) => {
-  const item_code  = req.params.id;
+  const item_code = req.params.id;
   const productDetail = await getProductsDetail(item_code);
   if (productDetail.length > 0) {
     res.send({
@@ -133,7 +134,7 @@ app.get('/api/products/:id', async (req, res) => {
   } else {
     res.send({
       errCode: 1,
-      message:'Something wrong!',
+      message: 'Something wrong!',
     });
   }
 });
@@ -395,6 +396,29 @@ app.get('/api/total-cost', async (req, res) => {
     res.send({
       errCode: 1,
       message: error,
+    });
+  }
+});
+//add new item into inventory_data
+app.post('/api/add-new-product', async (req, res) => {
+  const data = req.body;
+  try {
+    const response = await addingNewToInventory(data);
+    if (!response) {
+      res.send({
+        errCode: 1,
+        message: 'Database Wrong!',
+      });
+    }
+    res.send({
+      errCode: 0,
+      message: 'Add Success!',
+    });
+  } catch (error) {
+    res.send({
+      errCode: 2,
+      message: 'Something wrong, checking log',
+      log: error,
     });
   }
 });
