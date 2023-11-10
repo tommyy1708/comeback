@@ -204,8 +204,6 @@ async function updateInventory(qty, item_code) {
   return;
 }
 
-
-
 async function addSpendOnClient(newOrderData) {
   const clientName = newOrderData.clientName;
   const clientSpend = newOrderData.clientSpend;
@@ -260,7 +258,6 @@ async function addSpendOnClient(newOrderData) {
     //Inquire and refreshing database
     let refreshing = await getClientData();
 
-
     let spendValue = [clientSpend, clientName]; // total of order and client name
 
     //if client name not in database then add spend in to this client
@@ -295,17 +292,13 @@ async function addInventoryData(data) {
     data.date,
     data.casher,
   ];
-  await db.query(
-    sql,
-    values,
-    (error, result, fields) => {
-      if (error) {
-        console.error('Error add inventory data:', error);
-      } else {
-        console.log('Inventory data add successfully');
-      }
+  await db.query(sql, values, (error, result, fields) => {
+    if (error) {
+      console.error('Error add inventory data:', error);
+    } else {
+      console.log('Inventory data add successfully');
     }
-  )
+  });
   let fresh = 'SELECT * FROM add_inventory_data';
   await db.query(fresh);
 
@@ -317,13 +310,17 @@ async function addInventoryData(data) {
 async function getDataFromAddInventory(id) {
   let sql = `SELECT * FROM add_inventory_data WHERE item_code = ?`;
   let values = [id];
-  let result = await db.query(sql, values, (error, result, fields) => {
-    if (error) {
-      console.error('Error from inquire to inventory data:', error);
-    } else {
-      console.log('Inventory data add successfully');
+  let result = await db.query(
+    sql,
+    values,
+    (error, result, fields) => {
+      if (error) {
+        console.error('Error from inquire to inventory data:', error);
+      } else {
+        console.log('Inventory data add successfully');
+      }
     }
-  });
+  );
 
   return result;
 }
@@ -342,24 +339,29 @@ async function getDataAddInventoryByKey(key) {
         console.log('Inventory data add successfully');
       }
     }
-  )
+  );
 
   return result[0];
 }
 
 //minus qty at add_inventory_data
 async function updateAddInventory(qty, key) {
-  let sql = 'UPDATE add_inventory_data SET qty = qty - ? WHERE `key` = ?';
+  let sql =
+    'UPDATE add_inventory_data SET qty = qty - ? WHERE `key` = ?';
 
   let values = [qty, key];
 
-let response = await db.query(sql, values, (error, result, fields) => {
-    if (error) {
-      console.error('Error updating inventory data:', error);
-    } else {
-      console.log('Inventory data updated successfully');
+  let response = await db.query(
+    sql,
+    values,
+    (error, result, fields) => {
+      if (error) {
+        console.error('Error updating inventory data:', error);
+      } else {
+        console.log('Inventory data updated successfully');
+      }
     }
-  });
+  );
   let fresh = 'SELECT * FROM add_inventory_data';
   await db.query(fresh);
   return response[0];
@@ -367,26 +369,49 @@ let response = await db.query(sql, values, (error, result, fields) => {
 
 //get total cost
 async function getTotalCost() {
-  let sql = 'SELECT SUM(qty * cost) AS total_cost FROM inventory_data'
-let data =  await db.query(sql);
+  let sql =
+    'SELECT SUM(qty * cost) AS total_cost FROM inventory_data';
+  let data = await db.query(sql);
   return data[0];
 }
 
-//add new item into inventory_data
+//!!add new item into inventory_data
 async function addingNewToInventory(data) {
-  try{
-    const response =  await db.query(
-       `INSERT INTO inventory_data (item_code, item, qty, price, cost, category, amount)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-       [data.item_code, data.item, data.qty, data.price, data.cost, data.category, data.amount]
-    )
+  let sql = `INSERT INTO inventory_data (item_code, item, qty,price, cost, category, amount) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+  let values = [
+    data.item_code,
+    data.item,
+    data.qty,
+    data.price,
+    data.cost,
+    data.category,
+    data.amount,
+  ];
+  try {
+    const response = await db.query(
+      sql,
+      values,
+      (error, result, fields) => {
+        if (error) {
+          console.error(
+            'Error from inquire to inventory data:',
+            error
+          );
+        } else {
+          console.log('Inventory data add successfully');
+        }
+      }
+    );
     if (!response) {
-      console.log('no response')
+      console.log('no response');
+    } else {
+      let fresh = 'SELECT * FROM inventory_data';
+      await db.query(fresh);
+      return true;
     }
-    return true;
   } catch (error) {
     return error;
- }
+  }
 }
 
 const verifyJwt = (token) => {

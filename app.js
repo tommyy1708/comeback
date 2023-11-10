@@ -106,7 +106,12 @@ app.post('/api/login', async (req, res) => {
       res.send({
         errCode: 0,
         message: 'Success!',
-        userInfo: latestUserData,
+        userInfo: [
+          {
+            userName: latestUserData[0].username,
+            token:latestUserData[0].token,
+          },
+        ]
       });
     } else {
       res.send({
@@ -399,28 +404,34 @@ app.get('/api/total-cost', async (req, res) => {
     });
   }
 });
-//add new item into inventory_data
 app.post('/api/add-new-product', async (req, res) => {
   const data = req.body;
-  try {
+  console.log("🚀 ~ file: app.js:405 ~ app.post ~ data:", data)
+
     const response = await addingNewToInventory(data);
-    if (!response) {
-      res.send({
-        errCode: 1,
-        message: 'Database Wrong!',
-      });
-    }
-    res.send({
-      errCode: 0,
-      message: 'Add Success!',
-    });
-  } catch (error) {
-    res.send({
-      errCode: 2,
-      message: 'Something wrong, checking log',
-      log: error,
-    });
-  }
+    console.log("🚀 ~ file: app.js:413 ~ app.post ~ response:", response)
+
+  let result = JSON.stringify(response);
+      console.log("🚀 ~ file: app.js:417 ~ app.post ~ result:", result)
+  res.send({
+    errCode: 0,
+    message:"Add new product success!"
+  })
+
+    // if (response === true) {
+    //   console.log("true run")
+    //   res.send({
+    //     errCode: 0,
+    //     message: 'Add Success!',
+    //   })
+    // } else {
+    //    console.log('false run');
+    //   res.send({
+    //     errCode: 1,
+    //     message: 'Database Wrong!',
+    //   })
+  // }
+
 });
 
 app.listen(8000, () => {
