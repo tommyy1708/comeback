@@ -207,11 +207,14 @@ async function updateInventory(qty, item_code) {
 async function addSpendOnClient(newOrderData) {
   const clientName = newOrderData.clientName;
   const clientSpend = newOrderData.clientSpend;
+  const clientPhone = newOrderData.clientPhone;
+
   let nameValue = [clientName];
+  let phoneValue = [clientPhone];
 
   //Inquire if client already exists
   let sqlClientExists = `SELECT * FROM client_data
-  WHERE name = ?`;
+  WHERE phone = ?`;
   let existsResult = await db.query(
     sqlClientExists,
     nameValue,
