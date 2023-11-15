@@ -13,6 +13,7 @@ const {
   getTotalCost,
   getAllInventory,
   addInventoryData,
+  getOrderBetweenDate,
   updateProductsDetail,
   getAllOrderHistory,
   getDataAddInventoryByKey,
@@ -80,7 +81,9 @@ app.post(`/api/shopping-cart`, async (req, res) => {
       data.tax,
       data.total,
       data.casher,
-      data.method
+      data.method,
+      data.total_cost,
+      data.profit
     );
     res.send({
       errCode: 0,
@@ -109,9 +112,9 @@ app.post('/api/login', async (req, res) => {
         userInfo: [
           {
             userName: latestUserData[0].username,
-            token:latestUserData[0].token,
+            token: latestUserData[0].token,
           },
-        ]
+        ],
       });
     } else {
       res.send({
@@ -406,32 +409,35 @@ app.get('/api/total-cost', async (req, res) => {
 });
 app.post('/api/add-new-product', async (req, res) => {
   const data = req.body;
-  console.log("🚀 ~ file: app.js:405 ~ app.post ~ data:", data)
 
-    const response = await addingNewToInventory(data);
-    console.log("🚀 ~ file: app.js:413 ~ app.post ~ response:", response)
+  const response = await addingNewToInventory(data);
 
   let result = JSON.stringify(response);
-      console.log("🚀 ~ file: app.js:417 ~ app.post ~ result:", result)
+
   res.send({
     errCode: 0,
-    message:"Add new product success!"
-  })
-
-    // if (response === true) {
-    //   console.log("true run")
-    //   res.send({
-    //     errCode: 0,
-    //     message: 'Add Success!',
-    //   })
-    // } else {
-    //    console.log('false run');
-    //   res.send({
-    //     errCode: 1,
-    //     message: 'Database Wrong!',
-    //   })
-  // }
-
+    message: 'Add new product success!',
+  });
+});
+//!! working on
+app.get('/api/get-reports', async (req, res) => {
+  const params = req.query;
+  const begin = params.begin;
+  const end = params.end;
+  //The a_o_response returns aStatistics and aReports
+  const a_o_response = await getOrderBetweenDate(begin, end);
+  if (a_o_response) {
+    res.send({
+      errCode: 0,
+      message: 'Inquire success!',
+      data: a_o_response,
+    });
+  } else {
+    res.send({
+      errCode: 1,
+      message: 'Something wrong!',
+    });
+  }
 });
 
 app.listen(8000, () => {

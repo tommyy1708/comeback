@@ -58,6 +58,38 @@ async function getAllOrderHistory() {
   );
   return rows;
 }
+//!! working on
+async function getOrderBetweenDate(begin, end) {
+  let sqlReport =
+    'SELECT order_number, date, client, subtotal,total, method,total_cost, profit FROM order_data WHERE date BETWEEN ? AND ?';
+  const values = [begin, end];
+  const a_report = await db.query(
+    sqlReport,
+    values,
+    (error, result, fields) => {
+      if (error) {
+        console.error('Error updating inventory data:', error);
+      } else {
+        console.log('Inventory data updated successfully');
+      }
+    }
+  );
+  let sqlStatistic =
+    'SELECT SUM(total_cost) as totalCost, SUM(total) as totalTotal,SUM(profit) as totalProfit FROM order_data WHERE date BETWEEN ? AND ?';
+  const a_statistic = await db.query(
+    sqlStatistic,
+    values,
+    (error, result, fields) => {
+      if (error) {
+        console.error('Error updating inventory data:', error);
+      } else {
+        console.log('Inventory data updated successfully');
+      }
+    }
+  );
+  return {aStatistics:a_statistic[0],aReports:a_report[0]};
+}
+
 async function getAllInventory() {
   const [rows] = await db.query(
     `
@@ -141,12 +173,14 @@ async function addingDataToOrderData(
   tax,
   total,
   casher,
-  method
+  method,
+  total_cost,
+  profit
 ) {
   let newItems = JSON.stringify(items);
   await db.query(
-    `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total, casher, method)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total, casher, method,total_cost, profit)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       order_number,
       newItems,
@@ -159,6 +193,8 @@ async function addingDataToOrderData(
       total,
       casher,
       method,
+      total_cost,
+      profit,
     ]
   );
   return;
@@ -378,7 +414,6 @@ async function getTotalCost() {
   return data[0];
 }
 
-//!!add new item into inventory_data
 async function addingNewToInventory(data) {
   let sql = `INSERT INTO inventory_data (item_code, item, qty,price, cost, category, amount) VALUES (?, ?, ?, ?, ?, ?, ?)`;
   let values = [
@@ -438,6 +473,7 @@ module.exports = {
   addInventoryData,
   addingNewToInventory,
   getAllInventory,
+  getOrderBetweenDate,
   getDataFromAddInventory,
   getDataAddInventoryByKey,
   updateAddInventory,
