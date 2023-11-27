@@ -12,6 +12,7 @@ const {
   addSpendOnClient,
   getTotalCost,
   getAllInventory,
+  getQuotesData,
   addInventoryData,
   getOrderBetweenDate,
   updateProductsDetail,
@@ -24,6 +25,12 @@ const {
   getProductsDetail,
   getOrderByNumber,
   addingDataToOrderData,
+  getSupplierUsers,
+  updateTokenHairSupplier,
+  getCategory,
+  supplierVerifyJwt,
+  getSupplierCategoryList,
+  supplierGetUserInfo,
 } = require('./server.js');
 dotenv.config();
 
@@ -83,12 +90,21 @@ app.post(`/api/shopping-cart`, async (req, res) => {
       data.casher,
       data.method,
       data.total_cost,
-      data.profit
+      data.profit,
+      data.status
     );
-    res.send({
-      errCode: 0,
-      message: 'Printed!',
-    });
+    if (!result) {
+      console.log('false');
+      res.send({
+        errCode: 1,
+        message: 'Database wrong',
+      });
+    } else {
+      res.send({
+        errCode: 0,
+        message: 'Success!',
+      });
+    }
   } catch (err) {
     res.send({
       errCode: 1,
@@ -165,10 +181,17 @@ app.get('/api/order_history/order_detail/:id', async (req, res) => {
 
 app.get('/api/order_history', async (req, res) => {
   const allOrderData = await getAllOrderHistory();
-  res.status(200).send({
-    errCode: 0,
-    allOrderData,
-  });
+  if (!allOrderData) {
+    res.send({
+      errCode: 1,
+      message: 'Database wrong',
+    });
+  } else {
+    res.status(200).send({
+      errCode: 0,
+      allOrderData,
+    });
+  }
 });
 
 app.get('/api/sale', async (req, res) => {
@@ -424,7 +447,6 @@ app.get('/api/get-reports', async (req, res) => {
   const params = req.query;
   const begin = params.begin;
   const end = params.end;
-  //The a_o_response returns aStatistics and aReports
   const a_o_response = await getOrderBetweenDate(begin, end);
   if (a_o_response) {
     res.send({
@@ -440,6 +462,131 @@ app.get('/api/get-reports', async (req, res) => {
   }
 });
 
+app.get('/api/quote_history', async (req, res) => {
+  const aQuotesData = await getQuotesData();
+  if (!aQuotesData) {
+    res.send({
+      errCode: 1,
+      message: 'Database wrong',
+    });
+  } else {
+    res.send({
+      errCode: 0,
+      aQuotesData,
+    });
+  }
+});
+
 app.listen(8000, () => {
   console.log(`Example app listening on port 8000`);
+});
+
+// hair supplier Apis
+app.post('/api/supplier-login', async (req, res) => {
+  const { username, password } = req.body;
+
+  const aAccountInfo = await getSupplierUsers(username);
+  if (aAccountInfo.errCode === 2) {
+    return res.send({
+      errCode: 2,
+      message: 'Database issue',
+    });
+  } else if (aAccountInfo.length <= 0) {
+    return res.send({
+      errCode: 1,
+      message: 'User not exists',
+    });
+  }
+
+  const sPassWord = aAccountInfo[0].passWord.toString();
+  const sUserName = aAccountInfo[0].userName.toString();
+  const iAdmin = aAccountInfo[0].admin.toString();
+
+  if (aAccountInfo.length > 0 && password === sPassWord) {
+    let token = jwt.sign({ sUserName, iAdmin }, 'laoniu', {
+      expiresIn: '2h',
+    });
+    const updateLoginInfo = await updateTokenHairSupplier(
+      token,
+      username
+    );
+
+    if (updateLoginInfo.length > 0) {
+      res.send({
+        errCode: 0,
+        message: 'Success!',
+        data: {
+          token: updateLoginInfo[0].token,
+          userName: updateLoginInfo[0].userName,
+        },
+      });
+    }
+  } else {
+    res.send({
+      errCode: 1,
+      message: 'Wrong Password',
+    });
+  }
+});
+
+app.get('/api/supplier-category', async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+  if (!check) {
+    res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const category = await getCategory();
+
+    res.send({
+      errCode: 0,
+      message: 'Success',
+      data: category,
+    });
+  }
+});
+
+app.get('/api/supplier-category/:id', async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+  if (!check) {
+    res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const category = req.params.id;
+
+    const aCategoryList = await getSupplierCategoryList(category);
+
+    res.send({
+      errCode: 0,
+      message: 'Success',
+      data: aCategoryList,
+    });
+  }
+});
+
+app.put('/api/passwordUpdate', async (req, res) => {
+  const params = req.body;
+
+  const userInfo = await supplierGetUserInfo(params);
+  if (!userInfo) {
+    res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  }
+  res.send({
+    errCode: 0,
+    message: 'Success',
+  });
 });

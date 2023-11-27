@@ -7,7 +7,7 @@ const db = mysql
   .createPool({
     host: process.env.HOSTWH,
     port: process.env.PORTWH,
-    database: process.env.DATABASEWH,
+    database: process.env.DATABASE_HAIRSUPPLIER,
     user: process.env.USERNAMEWH,
     password: process.env.PASSWORDWH,
   })
@@ -54,10 +54,22 @@ async function getAllOrderHistory() {
     `
     SELECT *
     FROM order_data
+    WHERE status = 0
     `
   );
   return rows;
 }
+async function getQuotesData() {
+  const [rows] = await db.query(
+    `
+    SELECT *
+    FROM order_data
+    WHERE status = 1
+    `
+  );
+  return rows;
+}
+
 //!! working on
 async function getOrderBetweenDate(begin, end) {
   let sqlReport =
@@ -87,7 +99,7 @@ async function getOrderBetweenDate(begin, end) {
       }
     }
   );
-  return {aStatistics:a_statistic[0],aReports:a_report[0]};
+  return { aStatistics: a_statistic[0], aReports: a_report[0] };
 }
 
 async function getAllInventory() {
@@ -175,12 +187,13 @@ async function addingDataToOrderData(
   casher,
   method,
   total_cost,
-  profit
+  profit,
+  status
 ) {
   let newItems = JSON.stringify(items);
-  await db.query(
-    `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total, casher, method,total_cost, profit)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  const response = await db.query(
+    `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total, casher, method,total_cost, profit, status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       order_number,
       newItems,
@@ -195,9 +208,10 @@ async function addingDataToOrderData(
       method,
       total_cost,
       profit,
+      status,
     ]
   );
-  return;
+  return response[0];
 }
 
 async function getClientData() {
@@ -461,12 +475,75 @@ const verifyJwt = (token) => {
   return true;
 };
 
+//hair supplier Apis
+//Get user account information
+async function getSupplierUsers(username) {
+  const rows = await db.query(
+    `
+  SELECT *
+  FROM user_data
+  WHERE userName=?
+  `,
+    [username]
+  );
+  if (!rows[0]) {
+    return {message:'Database issue',errCode:2}
+  } else {
+    return rows[0];
+  }
+}
+// Update token to account
+async function updateTokenHairSupplier(token, username) {
+  let sql = `UPDATE user_data SET token="${token}" WHERE userName="${username}"`;
+  let getUserInfo = `SELECT * FROM user_data WHERE userName="${username}"`;
+  await db.query(sql);
+  let aUserInfo = await db.query(getUserInfo);
+  //return the latest data of user as login
+  return aUserInfo[0];
+}
+
+// Get all category information
+async function getCategory() {
+  let inquirySql = 'SELECT * FROM category_data';
+  const aCategory = await db.query(inquirySql);
+  return aCategory[0];
+}
+
+//Verify supplier token
+const supplierVerifyJwt = (token) => {
+  const verifyResult = jwt.verify(token, 'laoniu');
+  if (!verifyResult) {
+    return false;
+  } else {
+    return true;
+  }
+};
+
+//Get Specific category list
+async function getSupplierCategoryList(categoryName){
+  let inquirySql = `SELECT * FROM inventory_data WHERE category = ?`
+  const value = [categoryName];
+  const aCategoryList = await db.query(inquirySql, value);
+
+return aCategoryList[0];
+}
+
+//Get user info
+async function supplierGetUserInfo(userinfo) {
+    let inquirySql = `UPDATE user_data SET passWord = ? WHERE userName = ?`;
+  const value = [userinfo.newPassWord, userinfo.username];
+  const returnValue = await db.query(inquirySql, value);
+
+  return returnValue[0];
+}
+
 module.exports = {
   verifyJwt,
   getUsers,
   getClientData,
   updateToken,
   getTotalCost,
+  getQuotesData,
   updateInventory,
   addingNewClient,
   addSpendOnClient,
@@ -484,4 +561,10 @@ module.exports = {
   getProductsDetail,
   getOrderByNumber,
   addingDataToOrderData,
+  getSupplierUsers,
+  updateTokenHairSupplier,
+  getCategory,
+  supplierVerifyJwt,
+  getSupplierCategoryList,
+  supplierGetUserInfo,
 };
