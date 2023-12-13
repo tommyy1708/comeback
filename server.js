@@ -5,11 +5,11 @@ dotenv.config();
 
 const db = mysql
   .createPool({
-    host: process.env.HOSTWH,
-    port: process.env.PORTWH,
-    database: process.env.DATABASE_HAIRSUPPLIER,
-    user: process.env.USERNAMEWH,
-    password: process.env.PASSWORDWH,
+    host: process.env.DATABASE_HOST,
+    port: process.env.DATABASE_PORT,
+    database: process.env.DATABASE,
+    user: process.env.DATABASE_USERNAME,
+    password: process.env.DATABASE_PASSWORD,
   })
   .promise();
 
@@ -190,13 +190,15 @@ async function addingDataToOrderData(
   profit,
   status
 ) {
-  let newItems = JSON.stringify(items);
+  // const newItems = JSON.stringify(items);
+  // console.log("🚀 ~ file: server.js:194 ~ newItems:", newItems)
+
   const response = await db.query(
     `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total, casher, method,total_cost, profit, status)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       order_number,
-      newItems,
+      items,
       date,
       client,
       discount,
@@ -235,6 +237,7 @@ async function addingNewClient(data) {
   });
   return;
 }
+
 //minus qty at inventory_data
 async function updateInventory(qty, item_code) {
   let sql = `UPDATE inventory_data SET qty = qty - ?
@@ -537,6 +540,35 @@ async function supplierGetUserInfo(userinfo) {
   return returnValue[0];
 }
 
+async function addToSupplierOrder(
+  data
+) {
+  const sql = `INSERT INTO order_data (order_number, items, date, totalAmount, subtotal, tax, total, casher, method, total_cost, profit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  const values = [
+    data.order_number,
+    JSON.stringify(data.items),
+    data.date,
+    data.totalAmount,
+    data.subtotal,
+    data.tax,
+    data.total,
+    data.casher,
+    data.method,
+    data.total_cost,
+    data.profit,
+  ];
+
+  try {
+    const response = await db.query(sql, values);
+    console.log('Data updated successfully!', response[0]);
+    return response[0];
+  } catch (error) {
+    console.error('Error updating data:', error);
+    throw error;
+  }
+}
+
+
 module.exports = {
   verifyJwt,
   getUsers,
@@ -567,4 +599,5 @@ module.exports = {
   supplierVerifyJwt,
   getSupplierCategoryList,
   supplierGetUserInfo,
+  addToSupplierOrder,
 };

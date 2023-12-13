@@ -31,11 +31,11 @@ const {
   supplierVerifyJwt,
   getSupplierCategoryList,
   supplierGetUserInfo,
+  addToSupplierOrder,
 } = require('./server.js');
 dotenv.config();
-
 const app = express();
-const cors = require('cors');
+const cors = require("cors");
 
 app.use(cors());
 
@@ -77,6 +77,7 @@ app.post(`/api/shopping-cart`, async (req, res) => {
   try {
     const { cartData } = req.body;
     const data = JSON.parse(cartData);
+
     const result = await addingDataToOrderData(
       data.order_number,
       data.items,
@@ -94,12 +95,13 @@ app.post(`/api/shopping-cart`, async (req, res) => {
       data.status
     );
     if (!result) {
-      console.log('false');
+
       res.send({
         errCode: 1,
         message: 'Database wrong',
       });
     } else {
+      console.log('return')
       res.send({
         errCode: 0,
         message: 'Success!',
@@ -586,7 +588,36 @@ app.put('/api/passwordUpdate', async (req, res) => {
     });
   }
   res.send({
+    data:'Success',
     errCode: 0,
     message: 'Success',
   });
+});
+
+
+app.post(`/api/supplier-addNewOrder`, async (req, res) => {
+  try {
+    const { cartData } = req.body;
+
+    const data = JSON.parse(cartData);
+
+    const result = await addToSupplierOrder(data);
+
+    if (!result) {
+      res.send({
+        errCode: 1,
+        message: 'Database wrong',
+      });
+    } else {
+      res.send({
+        errCode: 0,
+        message: 'Success!',
+      });
+    }
+  } catch (err) {
+    res.send({
+      errCode: 1,
+      message: err,
+    });
+  }
 });
