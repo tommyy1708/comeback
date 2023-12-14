@@ -32,6 +32,7 @@ const {
   getSupplierCategoryList,
   supplierGetUserInfo,
   addToSupplierOrder,
+  getSupplierOrderList,
 } = require('./server.js');
 dotenv.config();
 const app = express();
@@ -101,7 +102,7 @@ app.post(`/api/shopping-cart`, async (req, res) => {
         message: 'Database wrong',
       });
     } else {
-      console.log('return')
+
       res.send({
         errCode: 0,
         message: 'Success!',
@@ -488,6 +489,7 @@ app.post('/api/supplier-login', async (req, res) => {
   const { username, password } = req.body;
 
   const aAccountInfo = await getSupplierUsers(username);
+
   if (aAccountInfo.errCode === 2) {
     return res.send({
       errCode: 2,
@@ -502,12 +504,12 @@ app.post('/api/supplier-login', async (req, res) => {
 
   const sPassWord = aAccountInfo[0].passWord.toString();
   const sUserName = aAccountInfo[0].userName.toString();
-  const iAdmin = aAccountInfo[0].admin.toString();
 
   if (aAccountInfo.length > 0 && password === sPassWord) {
-    let token = jwt.sign({ sUserName, iAdmin }, 'laoniu', {
+    let token = jwt.sign({ sUserName },`${process.env.SECRET}`, {
       expiresIn: '2h',
     });
+    //update token to account and return newest account info
     const updateLoginInfo = await updateTokenHairSupplier(
       token,
       username
@@ -520,6 +522,7 @@ app.post('/api/supplier-login', async (req, res) => {
         data: {
           token: updateLoginInfo[0].token,
           userName: updateLoginInfo[0].userName,
+          admin: updateLoginInfo[0].admin,
         },
       });
     }
@@ -621,3 +624,25 @@ app.post(`/api/supplier-addNewOrder`, async (req, res) => {
     });
   }
 });
+
+app.get(`/api/supplier-orders`, async (req, res) => {
+   if (!req.header('Authorization')) {
+     return;
+   }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+  if (!check) {
+   return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const aOrderList = await getSupplierOrderList();
+
+   return res.send({
+      errCode: 0,
+      message: 'Success',
+      data: aOrderList,
+    });
+  }
+})

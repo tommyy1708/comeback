@@ -490,7 +490,7 @@ async function getSupplierUsers(username) {
     [username]
   );
   if (!rows[0]) {
-    return {message:'Database issue',errCode:2}
+    return { message: 'Database issue', errCode: 2 };
   } else {
     return rows[0];
   }
@@ -501,6 +501,7 @@ async function updateTokenHairSupplier(token, username) {
   let getUserInfo = `SELECT * FROM user_data WHERE userName="${username}"`;
   await db.query(sql);
   let aUserInfo = await db.query(getUserInfo);
+
   //return the latest data of user as login
   return aUserInfo[0];
 }
@@ -523,26 +524,24 @@ const supplierVerifyJwt = (token) => {
 };
 
 //Get Specific category list
-async function getSupplierCategoryList(categoryName){
-  let inquirySql = `SELECT * FROM inventory_data WHERE category = ?`
+async function getSupplierCategoryList(categoryName) {
+  let inquirySql = `SELECT * FROM inventory_data WHERE category = ?`;
   const value = [categoryName];
   const aCategoryList = await db.query(inquirySql, value);
 
-return aCategoryList[0];
+  return aCategoryList[0];
 }
 
 //Get user info
 async function supplierGetUserInfo(userinfo) {
-    let inquirySql = `UPDATE user_data SET passWord = ? WHERE userName = ?`;
+  let inquirySql = `UPDATE user_data SET passWord = ? WHERE userName = ?`;
   const value = [userinfo.newPassWord, userinfo.username];
   const returnValue = await db.query(inquirySql, value);
 
   return returnValue[0];
 }
 
-async function addToSupplierOrder(
-  data
-) {
+async function addToSupplierOrder(data) {
   const sql = `INSERT INTO order_data (order_number, items, date, totalAmount, subtotal, tax, total, casher, method, total_cost, profit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   const values = [
     data.order_number,
@@ -560,7 +559,6 @@ async function addToSupplierOrder(
 
   try {
     const response = await db.query(sql, values);
-    console.log('Data updated successfully!', response[0]);
     return response[0];
   } catch (error) {
     console.error('Error updating data:', error);
@@ -568,6 +566,11 @@ async function addToSupplierOrder(
   }
 }
 
+async function getSupplierOrderList() {
+  const sql = `SELECT * FROM order_data`;
+  const response = await db.query(sql);
+  return response[0];
+}
 
 module.exports = {
   verifyJwt,
@@ -600,4 +603,5 @@ module.exports = {
   getSupplierCategoryList,
   supplierGetUserInfo,
   addToSupplierOrder,
+  getSupplierOrderList,
 };
