@@ -70,7 +70,6 @@ async function getQuotesData() {
   return rows;
 }
 
-//!! working on
 async function getOrderBetweenDate(begin, end) {
   let sqlReport =
     'SELECT order_number, date, client, subtotal,total, method,total_cost, profit FROM order_data WHERE date BETWEEN ? AND ?';
@@ -541,20 +540,21 @@ async function supplierGetUserInfo(userinfo) {
   return returnValue[0];
 }
 
-async function addToSupplierOrder(data) {
-  const sql = `INSERT INTO order_data (order_number, items, date, totalAmount, subtotal, tax, total, casher, method, total_cost, profit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+//Add new order to supplier database
+async function addToSupplierOrder(data,info) {
+  console.log("🚀 ~ file: server.js:545 ~ addToSupplierOrder ~ data:", data)
+  console.log("🚀 ~ file: server.js:545 ~ addToSupplierOrder ~ info:", info)
+  const sql = `INSERT INTO order_data (order_number, items, date, totalAmount, subtotal, casher, phone, address, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ? )`;
   const values = [
     data.order_number,
     JSON.stringify(data.items),
     data.date,
     data.totalAmount,
     data.subtotal,
-    data.tax,
-    data.total,
     data.casher,
-    data.method,
-    data.total_cost,
-    data.profit,
+    info.phone,
+    info.address,
+    info.email,
   ];
 
   try {
@@ -565,12 +565,51 @@ async function addToSupplierOrder(data) {
     throw error;
   }
 }
-
+//get order list from supplier database
 async function getSupplierOrderList() {
   const sql = `SELECT * FROM order_data`;
   const response = await db.query(sql);
   return response[0];
 }
+//get user info from supplier user_data
+async function getSupplierUserInfo(id) {
+
+  const sql = `SELECT * FROM user_data WHERE id=${id}`;
+  const response = await db.query(sql);
+  return response[0];
+}
+
+//supplier date picker from orders
+// async function getOrderBetweenDate(begin, end) {
+//   let sqlReport =
+//     'SELECT order_number, date, client, subtotal,total, method,total_cost, profit FROM order_data WHERE date BETWEEN ? AND ?';
+//   const values = [begin, end];
+//   const a_report = await db.query(
+//     sqlReport,
+//     values,
+//     (error, result, fields) => {
+//       if (error) {
+//         console.error('Error updating inventory data:', error);
+//       } else {
+//         console.log('Inventory data updated successfully');
+//       }
+//     }
+//   );
+//   let sqlStatistic =
+//     'SELECT SUM(total_cost) as totalCost, SUM(total) as totalTotal,SUM(profit) as totalProfit FROM order_data WHERE date BETWEEN ? AND ?';
+//   const a_statistic = await db.query(
+//     sqlStatistic,
+//     values,
+//     (error, result, fields) => {
+//       if (error) {
+//         console.error('Error updating inventory data:', error);
+//       } else {
+//         console.log('Inventory data updated successfully');
+//       }
+//     }
+//   );
+//   return { aStatistics: a_statistic[0], aReports: a_report[0] };
+// }
 
 module.exports = {
   verifyJwt,
@@ -604,4 +643,5 @@ module.exports = {
   supplierGetUserInfo,
   addToSupplierOrder,
   getSupplierOrderList,
+  getSupplierUserInfo,
 };

@@ -33,10 +33,11 @@ const {
   supplierGetUserInfo,
   addToSupplierOrder,
   getSupplierOrderList,
+  getSupplierUserInfo,
 } = require('./server.js');
 dotenv.config();
 const app = express();
-const cors = require("cors");
+const cors = require('cors');
 
 app.use(cors());
 
@@ -96,13 +97,11 @@ app.post(`/api/shopping-cart`, async (req, res) => {
       data.status
     );
     if (!result) {
-
       res.send({
         errCode: 1,
         message: 'Database wrong',
       });
     } else {
-
       res.send({
         errCode: 0,
         message: 'Success!',
@@ -506,7 +505,7 @@ app.post('/api/supplier-login', async (req, res) => {
   const sUserName = aAccountInfo[0].userName.toString();
 
   if (aAccountInfo.length > 0 && password === sPassWord) {
-    let token = jwt.sign({ sUserName },`${process.env.SECRET}`, {
+    let token = jwt.sign({ sUserName }, `${process.env.SECRET}`, {
       expiresIn: '2h',
     });
     //update token to account and return newest account info
@@ -523,6 +522,10 @@ app.post('/api/supplier-login', async (req, res) => {
           token: updateLoginInfo[0].token,
           userName: updateLoginInfo[0].userName,
           admin: updateLoginInfo[0].admin,
+          userID: updateLoginInfo[0].id,
+          userPhone: updateLoginInfo[0].phone,
+          userAddress: updateLoginInfo[0].address,
+          userEmail: updateLoginInfo[0].email,
         },
       });
     }
@@ -591,20 +594,20 @@ app.put('/api/passwordUpdate', async (req, res) => {
     });
   }
   res.send({
-    data:'Success',
+    data: 'Success',
     errCode: 0,
     message: 'Success',
   });
 });
 
-
 app.post(`/api/supplier-addNewOrder`, async (req, res) => {
   try {
-    const { cartData } = req.body;
+    const { cartData,userData } = req.body;
 
     const data = JSON.parse(cartData);
+    const info = JSON.parse(userData);
 
-    const result = await addToSupplierOrder(data);
+    const result = await addToSupplierOrder(data, info);
 
     if (!result) {
       res.send({
@@ -626,23 +629,50 @@ app.post(`/api/supplier-addNewOrder`, async (req, res) => {
 });
 
 app.get(`/api/supplier-orders`, async (req, res) => {
-   if (!req.header('Authorization')) {
-     return;
-   }
+  if (!req.header('Authorization')) {
+    return;
+  }
   const token = req.header('Authorization').slice(7);
   const check = await supplierVerifyJwt(token);
   if (!check) {
-   return res.send({
+    return res.send({
       errCode: 1,
       message: 'Something wrong',
     });
   } else {
     const aOrderList = await getSupplierOrderList();
 
-   return res.send({
+    return res.send({
       errCode: 0,
       message: 'Success',
       data: aOrderList,
     });
   }
-})
+});
+app.get(`/api/supplier-user`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const id = req.query.userId;
+    const response = await getSupplierUserInfo(id);
+    let userInfo = {
+      email: response[0].email,
+      address: response[0].address,
+      phone: response[0].phone,
+    };
+    return res.send({
+      errCode: 0,
+      message: 'Success',
+      data: userInfo,
+    });
+  }
+});
