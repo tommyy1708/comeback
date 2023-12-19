@@ -542,8 +542,6 @@ async function supplierGetUserInfo(userinfo) {
 
 //Add new order to supplier database
 async function addToSupplierOrder(data,info) {
-  console.log("🚀 ~ file: server.js:545 ~ addToSupplierOrder ~ data:", data)
-  console.log("🚀 ~ file: server.js:545 ~ addToSupplierOrder ~ info:", info)
   const sql = `INSERT INTO order_data (order_number, items, date, totalAmount, subtotal, casher, phone, address, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ? )`;
   const values = [
     data.order_number,
@@ -580,36 +578,23 @@ async function getSupplierUserInfo(id) {
 }
 
 //supplier date picker from orders
-// async function getOrderBetweenDate(begin, end) {
-//   let sqlReport =
-//     'SELECT order_number, date, client, subtotal,total, method,total_cost, profit FROM order_data WHERE date BETWEEN ? AND ?';
-//   const values = [begin, end];
-//   const a_report = await db.query(
-//     sqlReport,
-//     values,
-//     (error, result, fields) => {
-//       if (error) {
-//         console.error('Error updating inventory data:', error);
-//       } else {
-//         console.log('Inventory data updated successfully');
-//       }
-//     }
-//   );
-//   let sqlStatistic =
-//     'SELECT SUM(total_cost) as totalCost, SUM(total) as totalTotal,SUM(profit) as totalProfit FROM order_data WHERE date BETWEEN ? AND ?';
-//   const a_statistic = await db.query(
-//     sqlStatistic,
-//     values,
-//     (error, result, fields) => {
-//       if (error) {
-//         console.error('Error updating inventory data:', error);
-//       } else {
-//         console.log('Inventory data updated successfully');
-//       }
-//     }
-//   );
-//   return { aStatistics: a_statistic[0], aReports: a_report[0] };
-// }
+async function getSupplierOrderByDate(begin, end) {
+  let sqlReport =
+    'SELECT * FROM order_data WHERE date BETWEEN ? AND ?';
+  const values = [begin, end];
+  const a_report = await db.query(
+    sqlReport,
+    values,
+    (error, result, fields) => {
+      if (error) {
+        console.error('Error updating inventory data:', error);
+      } else {
+        console.log('Inventory data updated successfully');
+      }
+    }
+  );
+  return a_report[0]
+}
 
 module.exports = {
   verifyJwt,
@@ -644,4 +629,5 @@ module.exports = {
   addToSupplierOrder,
   getSupplierOrderList,
   getSupplierUserInfo,
+  getSupplierOrderByDate,
 };

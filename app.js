@@ -34,6 +34,7 @@ const {
   addToSupplierOrder,
   getSupplierOrderList,
   getSupplierUserInfo,
+  getSupplierOrderByDate,
 } = require('./server.js');
 dotenv.config();
 const app = express();
@@ -673,6 +674,32 @@ app.get(`/api/supplier-user`, async (req, res) => {
       errCode: 0,
       message: 'Success',
       data: userInfo,
+    });
+  }
+});
+
+app.get(`/api/supplier-ordersbydate`, async (req, res) => {
+  console.log('new request')
+  if (!req.header('Authorization')) {
+    return 'token wrong';
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    })
+  } else {
+    const {begin, end} = req.query;
+
+    const response = await getSupplierOrderByDate(begin, end);
+    console.log("🚀 ~ file: app.js:698 ~ app.get ~ response:", response)
+    return res.send({
+      errCode: 0,
+      message: 'Success',
+      data: response,
     });
   }
 });
