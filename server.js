@@ -531,8 +531,23 @@ async function getSupplierCategoryList(categoryName) {
 
 //Get user info
 async function supplierGetUserInfo(userinfo) {
-  let inquirySql = `UPDATE user_data SET passWord = ? WHERE userName = ?`;
-  const value = [userinfo.newPassWord, userinfo.username];
+  const userId = userinfo.userId;
+  const updateFields = Object.keys(userinfo)
+    .filter((key) => key !== 'userId')
+    .map((key) => `${key} = ?`) 
+    .join(', ');
+
+    const values = Object.values(userinfo).filter(
+      (value, index) =>
+        index !== Object.keys(userinfo).indexOf('userId')
+    );
+
+   if (!userId || values.length === 0) {
+     throw new Error('Invalid request');
+   }
+
+  let inquirySql = `UPDATE user_data SET ${updateFields} WHERE id = ?`;
+  const value = [...values, userId];
   const returnValue = await db.query(inquirySql, value);
 
   return returnValue[0];

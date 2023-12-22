@@ -595,7 +595,7 @@ app.put('/api/passwordUpdate', async (req, res) => {
   if (!userInfo) {
     res.send({
       errCode: 1,
-      message: 'Something wrong',
+      message: 'server wrong',
     });
   }
   res.send({
@@ -672,7 +672,10 @@ app.get(`/api/supplier-user`, async (req, res) => {
     let userInfo = {
       email: response[0].email,
       address: response[0].address,
+      passWord: response[0].passWord,
       phone: response[0].phone,
+      shipping_address: response[0].shipping_address,
+      mobile_number: response[0].mobile_number,
     };
     return res.send({
       errCode: 0,
