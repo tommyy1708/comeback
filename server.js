@@ -479,30 +479,28 @@ const verifyJwt = (token) => {
 
 //hair supplier Apis
 //Get user account information
-async function getSupplierUsers(username) {
+async function getSupplierUsers(email) {
   const rows = await db.query(
     `
   SELECT *
   FROM user_data
-  WHERE userName=?
+  WHERE email=?
   `,
-    [username]
+    [email]
   );
-  if (!rows[0]) {
-    return { message: 'Database issue', errCode: 2 };
-  } else {
-    return rows[0];
-  }
+  //return Object {}
+    return rows[0][0];
 }
+
 // Update token to account
-async function updateTokenHairSupplier(token, username) {
-  let sql = `UPDATE user_data SET token="${token}" WHERE userName="${username}"`;
-  let getUserInfo = `SELECT * FROM user_data WHERE userName="${username}"`;
+async function updateTokenHairSupplier(token, email) {
+  let sql = `UPDATE user_data SET token="${token}" WHERE email="${email}"`;
+  let getUserInfo = `SELECT * FROM user_data WHERE email="${email}"`;
   await db.query(sql);
   let aUserInfo = await db.query(getUserInfo);
 
-  //return the latest data of user as login
-  return aUserInfo[0];
+  //return the object{} of user info after login
+  return aUserInfo[0][0];
 }
 
 // Get all category information
@@ -542,14 +540,15 @@ async function supplierGetUserInfo(userinfo) {
 
 //Add new order to supplier database
 async function addToSupplierOrder(data,info) {
-  const sql = `INSERT INTO order_data (order_number, items, date, totalAmount, subtotal, casher, phone, address, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ? )`;
+  const sql = `INSERT INTO order_data (order_number, items, date, totalAmount, subtotal, first_name,last_name, phone, address, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`;
   const values = [
     data.order_number,
     JSON.stringify(data.items),
     data.date,
     data.totalAmount,
     data.subtotal,
-    data.casher,
+    data.first_name,
+    data.last_name,
     info.phone,
     info.address,
     info.email,
