@@ -35,6 +35,7 @@ const {
   getSupplierOrderList,
   getSupplierUserInfo,
   getSupplierOrderByDate,
+  postUser,
 } = require('./server.js');
 dotenv.config();
 const app = express();
@@ -606,29 +607,38 @@ app.put('/api/passwordUpdate', async (req, res) => {
 });
 
 app.post(`/api/supplier-addNewOrder`, async (req, res) => {
-  try {
-    const { cartData, userData } = req.body;
-
-    const data = JSON.parse(cartData);
-    const info = JSON.parse(userData);
-
-    const result = await addToSupplierOrder(data, info);
-
-    if (!result) {
-      res.send({
-        errCode: 1,
-        message: 'Database wrong',
-      });
-    } else {
-      res.send({
-        errCode: 0,
-        message: 'Success!',
-      });
-    }
-  } catch (err) {
+  //verify token
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+  if (!check) {
     res.send({
       errCode: 1,
-      message: err,
+      message: 'Something wrong',
+    });
+  } else {
+    const category = req.params.id;
+  }
+
+  //processing order
+  const { cartData, userId } = req.body;
+
+  const result = await addToSupplierOrder(
+    JSON.parse(cartData),
+    userId
+  );
+
+  if (!result) {
+    res.send({
+      errCode: 1,
+      message: 'Database wrong',
+    });
+  } else {
+    res.send({
+      errCode: 0,
+      message: 'Success!',
     });
   }
 });
@@ -646,14 +656,21 @@ app.get(`/api/supplier-orders`, async (req, res) => {
     });
   } else {
     const aOrderList = await getSupplierOrderList();
-
-    return res.send({
-      errCode: 0,
-      message: 'Success',
-      data: aOrderList,
-    });
+    if (!aOrderList) {
+      return res.send({
+        errCode: 1,
+        message: 'Error from server',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'Success',
+        data: JSON.stringify(aOrderList),
+      });
+    }
   }
 });
+
 app.get(`/api/supplier-user`, async (req, res) => {
   if (!req.header('Authorization')) {
     return;
@@ -682,6 +699,35 @@ app.get(`/api/supplier-user`, async (req, res) => {
       message: 'Success',
       data: userInfo,
     });
+  }
+});
+app.post(`/api/supplier-user`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const { params } = req.body;
+    const response = await postUser(params);
+
+    if (!response) {
+      return res.send({
+        errCode: 1,
+        message: 'Add new failed',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'Customer added successfully!',
+      });
+    }
   }
 });
 

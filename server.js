@@ -489,7 +489,7 @@ async function getSupplierUsers(email) {
     [email]
   );
   //return Object {}
-    return rows[0][0];
+  return rows[0][0];
 }
 
 // Update token to account
@@ -534,17 +534,17 @@ async function supplierGetUserInfo(userinfo) {
   const userId = userinfo.userId;
   const updateFields = Object.keys(userinfo)
     .filter((key) => key !== 'userId')
-    .map((key) => `${key} = ?`) 
+    .map((key) => `${key} = ?`)
     .join(', ');
 
-    const values = Object.values(userinfo).filter(
-      (value, index) =>
-        index !== Object.keys(userinfo).indexOf('userId')
-    );
+  const values = Object.values(userinfo).filter(
+    (value, index) =>
+      index !== Object.keys(userinfo).indexOf('userId')
+  );
 
-   if (!userId || values.length === 0) {
-     throw new Error('Invalid request');
-   }
+  if (!userId || values.length === 0) {
+    throw new Error('Invalid request');
+  }
 
   let inquirySql = `UPDATE user_data SET ${updateFields} WHERE id = ?`;
   const value = [...values, userId];
@@ -554,38 +554,55 @@ async function supplierGetUserInfo(userinfo) {
 }
 
 //Add new order to supplier database
-async function addToSupplierOrder(data,info) {
-  const sql = `INSERT INTO order_data (order_number, items, date, totalAmount, subtotal, first_name,last_name, phone, address, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`;
+async function addToSupplierOrder(cartData, userInfo) {
+  const sql = `INSERT INTO order_data (order_number, items, date, totalAmount, subtotal, userId) VALUES (?, ?, ?, ?, ?, ?)`;
   const values = [
-    data.order_number,
-    JSON.stringify(data.items),
-    data.date,
-    data.totalAmount,
-    data.subtotal,
-    data.first_name,
-    data.last_name,
-    info.phone,
-    info.address,
-    info.email,
+    cartData.order_number,
+    JSON.stringify(cartData.items),
+    cartData.date,
+    cartData.totalAmount,
+    cartData.subtotal,
+    userInfo,
   ];
 
+  const response = await db.query(sql, values);
+
+  if (response && response.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+//get order list from supplier database
+async function getSupplierOrderList() {
+  const sql = `
+    SELECT order_data.order_number, order_data.items, order_data.date, totalAmount, user_data.first_name, user_data.last_name, user_data.phone, user_data.mobile_number, user_data.email, user_data.address, user_data.shipping_address
+    FROM order_data
+    INNER JOIN user_data ON order_data.userId = user_data.id
+  `;
+  //   const sql = `
+  //   SELECT order_data.order_number,
+  //     JSON_UNQUOTE(JSON_EXTRACT(order_data.items, '$[0].item_code')) AS item_code,
+  //     JSON_UNQUOTE(JSON_EXTRACT(order_data.items, '$[0].item')) AS item_name,
+  //     JSON_UNQUOTE(JSON_EXTRACT(order_data.items, '$[0].amount')) AS item_quantity,
+  //     order_data.date, totalAmount, user_data.first_name, user_data.last_name, user_data.phone, user_data.mobile_number, user_data.email, user_data.address, user_data.shipping_address
+  //   FROM order_data
+  //   INNER JOIN user_data ON order_data.userId = user_data.id
+  // `;
+
   try {
-    const response = await db.query(sql, values);
-    return response[0];
+    const result = await db.query(sql);
+    return result[0];
   } catch (error) {
-    console.error('Error updating data:', error);
+    console.error('Error fetching data:', error);
+    // handle the error
     throw error;
   }
 }
-//get order list from supplier database
-async function getSupplierOrderList() {
-  const sql = `SELECT * FROM order_data`;
-  const response = await db.query(sql);
-  return response[0];
-}
+
 //get user info from supplier user_data
 async function getSupplierUserInfo(id) {
-
   const sql = `SELECT * FROM user_data WHERE id=${id}`;
   const response = await db.query(sql);
   return response[0];
@@ -607,7 +624,30 @@ async function getSupplierOrderByDate(begin, end) {
       }
     }
   );
-  return a_report[0]
+  return a_report[0];
+}
+
+async function postUser(user) {
+  const userInfo = JSON.parse(user);
+  let sql = `
+      INSERT INTO user_data
+  (first_name, last_name, email, phone, mobile_number, address, shipping_address)
+  VALUES (?, ?, ?, ?, ?, ?, ?) `;
+  const values = [
+    userInfo.first_name,
+    userInfo.last_name,
+    userInfo.email,
+    userInfo.phone,
+    userInfo.mobile_number,
+    userInfo.address,
+    userInfo.shipping_address,
+  ];
+  const response = await db.query(sql, values);
+  if (response && response.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 module.exports = {
@@ -644,4 +684,5 @@ module.exports = {
   getSupplierOrderList,
   getSupplierUserInfo,
   getSupplierOrderByDate,
+  postUser,
 };
