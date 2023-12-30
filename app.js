@@ -36,6 +36,9 @@ const {
   getSupplierUserInfo,
   getSupplierOrderByDate,
   postUser,
+  getSupplierAnnouncement,
+  updateSupplierAnnouncement,
+  getSupplierUserList,
 } = require('./server.js');
 dotenv.config();
 const app = express();
@@ -701,6 +704,7 @@ app.get(`/api/supplier-user`, async (req, res) => {
     });
   }
 });
+
 app.post(`/api/supplier-user`, async (req, res) => {
   if (!req.header('Authorization')) {
     return;
@@ -732,7 +736,6 @@ app.post(`/api/supplier-user`, async (req, res) => {
 });
 
 app.get(`/api/supplier-ordersbydate`, async (req, res) => {
-  console.log('new request');
   if (!req.header('Authorization')) {
     return 'token wrong';
   }
@@ -755,3 +758,76 @@ app.get(`/api/supplier-ordersbydate`, async (req, res) => {
     });
   }
 });
+
+
+app.get(`/api/supplier-announcement`, async (req, res) => {
+
+    const response = await getSupplierAnnouncement();
+  if (!response) {
+    return res.send({
+      errCode: 1,
+      message: 'no response on database!',
+    });
+  } else {
+    return res.send({
+      errCode: 0,
+      message: 'Success',
+      data: response,
+    });
+  }
+});
+
+
+app.put(`/api/supplier-announcement`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return 'token wrong';
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const {content} = req.body;
+    const response = await updateSupplierAnnouncement(content);
+
+    return res.send({
+      errCode: 0,
+      message: 'Success',
+    });
+  }
+});
+
+app.get(`/api/supplier-user-list`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const response = await getSupplierUserList();
+
+     if (!response) {
+       return res.send({
+         errCode: 1,
+         message: 'no response on database!',
+       });
+     } else {
+       return res.send({
+         errCode: 0,
+         message: 'Success',
+         data: response,
+       });
+     }
+  }
+});
+

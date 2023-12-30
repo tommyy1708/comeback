@@ -650,6 +650,38 @@ async function postUser(user) {
   }
 }
 
+async function getSupplierAnnouncement() {
+  let sql = `SELECT * FROM announcement`;
+  const response = await db.query(sql);
+
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
+}
+
+async function updateSupplierAnnouncement(content) {
+  const key = 1;
+  let sql = `UPDATE announcement SET content = '${content}' WHERE \`key\` = '${key}'`;
+  const response = await db.query(sql);
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
+}
+
+async function getSupplierUserList() {
+  let sql = `SELECT * FROM user_data`
+  const response = await db.query(sql)
+   if (response && response.length > 0) {
+     return response[0];
+   } else {
+     return false;
+   }
+}
+
 module.exports = {
   verifyJwt,
   getUsers,
@@ -685,4 +717,7 @@ module.exports = {
   getSupplierUserInfo,
   getSupplierOrderByDate,
   postUser,
+  getSupplierAnnouncement,
+  updateSupplierAnnouncement,
+  getSupplierUserList,
 };
