@@ -1,4 +1,6 @@
 const express = require('express');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const {
@@ -48,10 +50,62 @@ app.use(cors());
 
 //allow app using json format in the createNote function
 app.use(express.json());
+
+
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 });
+//  config email
+const transporter = nodemailer.createTransport({
+  service: process.env.EMAIL,
+  auth: {
+    user: process.env.EMAIL_USERNAME,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+// store email-verificationCode pairs
+const verificationCodes = new Map();
+
+// testing
+app.post('/api/send-verification-code',async (req, res) => {
+  const { email } = req.body;
+
+  // Generate a random verification code
+  const verificationCode = crypto
+    .randomBytes(3)
+    .toString('hex')
+    .toUpperCase();
+
+  // Save the verification code for later verification
+  verificationCodes.set(email, verificationCode);
+
+  // Send the verification code via email
+  const mailOptions = {
+    from: process.env.EMAIL_USERNAME,
+    to: email,
+    subject: 'Password Reset Verification Code',
+    text: `Your verification code is: ${verificationCode}`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      res
+        .status(500)
+        .send({
+          errCode: 1,
+          message: 'Error sending verification code',
+        });
+    } else {
+      res.status(200).send({
+        errCode: 0,
+        message: 'Verification code sent successfully',
+      });
+    }
+  });
+});
+
 //verify token
 app.get(`/api/verify`, async (req, res) => {
   const authorizeHeader = req.header('Authorization');
@@ -70,7 +124,7 @@ app.get(`/api/verify`, async (req, res) => {
     res.send({
       errCode: 0,
       status: true,
-    });
+    });5
   } catch (err) {
     res.send({
       errCode: 1,
