@@ -36,6 +36,21 @@ async function getUserByName(username) {
   );
   return rows[0];
 }
+async function getUserByEmail(email) {
+  const [rows] = await db.query(
+    `
+  SELECT *
+  FROM user_data
+  WHERE email = ?
+`,
+    [email]
+  );
+  if (rows.length === 0) {
+    return false;
+  } else {
+    return rows[0];
+  }
+}
 
 async function getOrderByNumber(number) {
   const [rows] = await db.query(
@@ -700,6 +715,7 @@ module.exports = {
   getDataAddInventoryByKey,
   updateAddInventory,
   getUserByName,
+  getUserByEmail,
   updateProductsDetail,
   getAllOrderHistory,
   getInventoryData,

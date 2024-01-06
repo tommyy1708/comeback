@@ -9,6 +9,7 @@ const {
   updateToken,
   getClientData,
   getUserByName,
+  getUserByEmail,
   addingNewClient,
   updateInventory,
   addSpendOnClient,
@@ -68,42 +69,47 @@ const transporter = nodemailer.createTransport({
 // store email-verificationCode pairs
 const verificationCodes = new Map();
 
-// testing
-app.post('/api/send-verification-code',async (req, res) => {
+app.post('/api/password-retrieval',async (req, res) => {
   const { email } = req.body;
-
-  // Generate a random verification code
-  const verificationCode = crypto
-    .randomBytes(3)
-    .toString('hex')
-    .toUpperCase();
-
-  // Save the verification code for later verification
-  verificationCodes.set(email, verificationCode);
-
-  // Send the verification code via email
-  const mailOptions = {
-    from: process.env.EMAIL_USERNAME,
-    to: email,
-    subject: 'Password Reset Verification Code',
-    text: `Your verification code is: ${verificationCode}`,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      res
-        .status(500)
-        .send({
+  const response = await getUserByEmail(email);
+  if (!response ) {
+   return res.send({
           errCode: 1,
-          message: 'Error sending verification code',
+          message: `We don't have this email in the system`,
         });
-    } else {
-      res.status(200).send({
-        errCode: 0,
-        message: 'Verification code sent successfully',
-      });
-    }
-  });
+  } else {
+    const passWord = response.passWord;
+    // const verificationCode = crypto
+    //   .randomBytes(3)
+    //   .toString('hex')
+    //   .toUpperCase();
+
+    // verificationCodes.set(email, verificationCode);
+
+    // Send the password via email
+    const mailOptions = {
+      from: process.env.EMAIL_USERNAME,
+      to: email,
+      subject: 'Password Retrieval',
+      text: `Your password is: ${passWord}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        res
+          .status(500)
+          .send({
+            errCode: 1,
+            message: 'Error sending',
+          });
+      } else {
+        res.status(200).send({
+          errCode: 0,
+          message: 'Password sent to your email successfully',
+        });
+      }
+    });
+  }
 });
 
 //verify token
