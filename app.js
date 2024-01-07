@@ -42,6 +42,8 @@ const {
   getSupplierAnnouncement,
   updateSupplierAnnouncement,
   getSupplierUserList,
+  postProduct,
+  getProduct,
 } = require('./server.js');
 dotenv.config();
 const app = express();
@@ -790,6 +792,68 @@ app.post(`/api/supplier-user`, async (req, res) => {
       return res.send({
         errCode: 0,
         message: 'Customer added successfully!',
+      });
+    }
+  }
+});
+app.post(`/api/supplier-product`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const { params } = req.body;
+    const response = await postProduct(params);
+
+    if (!response) {
+      return res.send({
+        errCode: 1,
+        message: 'Add new product failed',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'New Product add successfully!',
+      });
+    }
+  }
+});
+
+app.get(`/api/supplier-product`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+
+    const itemCode = req.query.keyWord;
+
+    const response = await getProduct(itemCode);
+
+    if (!response) {
+      return res.send({
+        errCode: 1,
+        message: 'No Data about this item',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'Get Product Success!',
+        data: response,
       });
     }
   }

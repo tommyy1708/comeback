@@ -664,6 +664,39 @@ async function postUser(user) {
     return false;
   }
 }
+async function postProduct(product) {
+  const productInfo = JSON.parse(product);
+  let sql = `
+      INSERT INTO inventory_data
+  (item_code, item, price, category)
+  VALUES (?, ?, ?, ?) `;
+  const values = [
+    productInfo.item_code,
+    productInfo.item,
+    productInfo.price,
+    productInfo.category,
+  ];
+
+  const response = await db.query(sql, values);
+  if (response && response.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+async function getProduct(itemCode) {
+  // const productInfo = JSON.parse(itemCode);
+  let sql = `SELECT * FROM inventory_data WHERE item_code = ?`;
+  const values = [itemCode];
+  const response = await db.query(sql,values);
+
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
+}
 
 async function getSupplierAnnouncement() {
   let sql = `SELECT * FROM announcement`;
@@ -736,4 +769,6 @@ module.exports = {
   getSupplierAnnouncement,
   updateSupplierAnnouncement,
   getSupplierUserList,
+  postProduct,
+  getProduct,
 };
