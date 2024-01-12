@@ -44,6 +44,7 @@ const {
   getSupplierUserList,
   postProduct,
   getProduct,
+  deleteProduct,
 } = require('./server.js');
 dotenv.config();
 const app = express();
@@ -53,8 +54,6 @@ app.use(cors());
 
 //allow app using json format in the createNote function
 app.use(express.json());
-
-
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -71,14 +70,14 @@ const transporter = nodemailer.createTransport({
 // store email-verificationCode pairs
 const verificationCodes = new Map();
 
-app.post('/api/password-retrieval',async (req, res) => {
+app.post('/api/password-retrieval', async (req, res) => {
   const { email } = req.body;
   const response = await getUserByEmail(email);
-  if (!response ) {
-   return res.send({
-          errCode: 1,
-          message: `We don't have this email in the system`,
-        });
+  if (!response) {
+    return res.send({
+      errCode: 1,
+      message: `We don't have this email in the system`,
+    });
   } else {
     const passWord = response.passWord;
     // const verificationCode = crypto
@@ -98,12 +97,10 @@ app.post('/api/password-retrieval',async (req, res) => {
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        res
-          .status(500)
-          .send({
-            errCode: 1,
-            message: 'Error sending',
-          });
+        res.status(500).send({
+          errCode: 1,
+          message: 'Error sending',
+        });
       } else {
         res.status(200).send({
           errCode: 0,
@@ -132,7 +129,8 @@ app.get(`/api/verify`, async (req, res) => {
     res.send({
       errCode: 0,
       status: true,
-    });5
+    });
+    5;
   } catch (err) {
     res.send({
       errCode: 1,
@@ -645,12 +643,18 @@ app.get('/api/supplier-category/:id', async (req, res) => {
     const category = req.params.id;
 
     const aCategoryList = await getSupplierCategoryList(category);
-
-    res.send({
-      errCode: 0,
-      message: 'Success',
-      data: aCategoryList,
-    });
+    if (!aCategoryList) {
+      res.send({
+        errCode: 1,
+        message: 'server wrong',
+      });
+    } else {
+      res.send({
+        errCode: 0,
+        message: 'Success',
+        data: aCategoryList,
+      });
+    }
   }
 });
 
@@ -663,12 +667,13 @@ app.put('/api/passwordUpdate', async (req, res) => {
       errCode: 1,
       message: 'server wrong',
     });
+  } else {
+    res.send({
+      data: 'Success',
+      errCode: 0,
+      message: 'Success',
+    });
   }
-  res.send({
-    data: 'Success',
-    errCode: 0,
-    message: 'Success',
-  });
 });
 
 app.post(`/api/supplier-addNewOrder`, async (req, res) => {
@@ -839,7 +844,6 @@ app.get(`/api/supplier-product`, async (req, res) => {
       message: 'Something wrong',
     });
   } else {
-
     const itemCode = req.query.keyWord;
 
     const response = await getProduct(itemCode);
@@ -854,6 +858,37 @@ app.get(`/api/supplier-product`, async (req, res) => {
         errCode: 0,
         message: 'Get Product Success!',
         data: response,
+      });
+    }
+  }
+});
+
+app.delete(`/api/supplier-product/:itemCode`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const itemCode = req.params.itemCode;
+
+    const response = await deleteProduct(itemCode);
+
+    if (!response) {
+      return res.send({
+        errCode: 1,
+        message: 'Something wrong',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'Delete Product Success!',
       });
     }
   }
@@ -883,10 +918,8 @@ app.get(`/api/supplier-ordersbydate`, async (req, res) => {
   }
 });
 
-
 app.get(`/api/supplier-announcement`, async (req, res) => {
-
-    const response = await getSupplierAnnouncement();
+  const response = await getSupplierAnnouncement();
   if (!response) {
     return res.send({
       errCode: 1,
@@ -901,7 +934,6 @@ app.get(`/api/supplier-announcement`, async (req, res) => {
   }
 });
 
-
 app.put(`/api/supplier-announcement`, async (req, res) => {
   if (!req.header('Authorization')) {
     return 'token wrong';
@@ -915,7 +947,7 @@ app.put(`/api/supplier-announcement`, async (req, res) => {
       message: 'Something wrong',
     });
   } else {
-    const {content} = req.body;
+    const { content } = req.body;
     const response = await updateSupplierAnnouncement(content);
 
     return res.send({
@@ -940,18 +972,17 @@ app.get(`/api/supplier-user-list`, async (req, res) => {
   } else {
     const response = await getSupplierUserList();
 
-     if (!response) {
-       return res.send({
-         errCode: 1,
-         message: 'no response on database!',
-       });
-     } else {
-       return res.send({
-         errCode: 0,
-         message: 'Success',
-         data: response,
-       });
-     }
+    if (!response) {
+      return res.send({
+        errCode: 1,
+        message: 'no response on database!',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'Success',
+        data: response,
+      });
+    }
   }
 });
-

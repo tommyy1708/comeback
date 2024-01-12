@@ -729,6 +729,17 @@ async function getSupplierUserList() {
      return false;
    }
 }
+async function deleteProduct(item) {
+  let sql = `DELETE FROM inventory_data WHERE item_code = '${item}' `;
+  let sql2 = `SELECT * FROM inventory_data`;
+  const response = await db.query(sql);
+  await db.query(sql2);
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
+}
 
 module.exports = {
   verifyJwt,
@@ -771,4 +782,5 @@ module.exports = {
   getSupplierUserList,
   postProduct,
   getProduct,
+  deleteProduct,
 };
