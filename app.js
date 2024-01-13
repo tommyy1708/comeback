@@ -45,6 +45,7 @@ const {
   postProduct,
   getProduct,
   deleteProduct,
+  deleteCustomer,
 } = require('./server.js');
 dotenv.config();
 const app = express();
@@ -889,6 +890,36 @@ app.delete(`/api/supplier-product/:itemCode`, async (req, res) => {
       return res.send({
         errCode: 0,
         message: 'Delete Product Success!',
+      });
+    }
+  }
+});
+app.delete(`/api/supplier-user/:id`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const id = req.params.id;
+
+    const response = await deleteCustomer(id);
+
+    if (!response) {
+      return res.send({
+        errCode: 1,
+        message: 'Something wrong',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'Delete Customer Success!',
       });
     }
   }

@@ -740,6 +740,17 @@ async function deleteProduct(item) {
     return false;
   }
 }
+async function deleteCustomer(id) {
+  let sql = `DELETE FROM user_data WHERE id = '${id}' `;
+  let sql2 = `SELECT * FROM inventory_data`;
+  const response = await db.query(sql);
+  await db.query(sql2);
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
+}
 
 module.exports = {
   verifyJwt,
@@ -783,4 +794,5 @@ module.exports = {
   postProduct,
   getProduct,
   deleteProduct,
+  deleteCustomer,
 };
