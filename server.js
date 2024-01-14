@@ -751,6 +751,33 @@ async function deleteCustomer(id) {
     return false;
   }
 }
+async function deleteCategory(categoryName) {
+  let sql = `DELETE FROM category_data WHERE categoryName = '${categoryName}' `;
+  let sql2 = `SELECT * FROM category_data`;
+  const response = await db.query(sql);
+  await db.query(sql2);
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
+}
+
+async function postCategory(category) {
+  const categoryInfo = JSON.parse(category);
+  let sql = `
+      INSERT INTO category_data
+  (categoryName)
+  VALUES (?) `;
+  const values = [categoryInfo.categoryName];
+
+  const response = await db.query(sql, values);
+  if (response && response.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 module.exports = {
   verifyJwt,
@@ -795,4 +822,6 @@ module.exports = {
   getProduct,
   deleteProduct,
   deleteCustomer,
+  deleteCategory,
+  postCategory,
 };

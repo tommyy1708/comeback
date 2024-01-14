@@ -46,6 +46,8 @@ const {
   getProduct,
   deleteProduct,
   deleteCustomer,
+  deleteCategory,
+  postCategory,
 } = require('./server.js');
 dotenv.config();
 const app = express();
@@ -802,6 +804,7 @@ app.post(`/api/supplier-user`, async (req, res) => {
     }
   }
 });
+
 app.post(`/api/supplier-product`, async (req, res) => {
   if (!req.header('Authorization')) {
     return;
@@ -924,6 +927,36 @@ app.delete(`/api/supplier-user/:id`, async (req, res) => {
     }
   }
 });
+app.delete(`/api/supplier-category/:categoryName`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const categoryName = req.params.categoryName;
+
+    const response = await deleteCategory(categoryName);
+
+    if (!response) {
+      return res.send({
+        errCode: 1,
+        message: 'Something wrong',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'Delete Category Success!',
+      });
+    }
+  }
+});
 
 app.get(`/api/supplier-ordersbydate`, async (req, res) => {
   if (!req.header('Authorization')) {
@@ -1013,6 +1046,36 @@ app.get(`/api/supplier-user-list`, async (req, res) => {
         errCode: 0,
         message: 'Success',
         data: response,
+      });
+    }
+  }
+});
+
+app.post(`/api/supplier-category`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const { params } = req.body;
+    const response = await postCategory(params);
+
+    if (!response) {
+      return res.send({
+        errCode: 1,
+        message: 'Add new failed',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'Customer added successfully!',
       });
     }
   }
