@@ -49,14 +49,47 @@ const {
   deleteCategory,
   postCategory,
 } = require('./server.js');
+const path = require('path')
+const multer = require('multer')
 dotenv.config();
 const app = express();
 const cors = require('cors');
-
+const DatabasePort = process.env.DATABASE_PORT
+const DatabaseHost = process.env.DATABASE_HOST
 app.use(cors());
 
 //allow app using json format in the createNote function
 app.use(express.json());
+app.use('/assets/images', express.static('public/assets/images'));
+
+// Start Set up multer for file upload
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'public/assets/images'); // Set the destination folder for image uploads
+  },
+  filename: function (req, file, cb) {
+      const timestamp = Date.now();
+      const filename = `${timestamp}_${file.originalname}`;
+    cb(null, filename); // Keep the original filename
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// hair-supplier upload API endpoint for image upload
+app.post('/api/images', upload.single('file'), (req, res) => {
+  try {
+    // Assuming you want to return the uploaded image URL
+    const imageUrl = `http://${DatabaseHost}:8000/assets/images/${req.file.filename}`;
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Image upload failed' });
+  }
+});
+
+
+// End Set up multer for file upload
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

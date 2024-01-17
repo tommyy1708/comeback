@@ -596,15 +596,6 @@ async function getSupplierOrderList() {
     FROM order_data
     INNER JOIN user_data ON order_data.userId = user_data.id
   `;
-  //   const sql = `
-  //   SELECT order_data.order_number,
-  //     JSON_UNQUOTE(JSON_EXTRACT(order_data.items, '$[0].item_code')) AS item_code,
-  //     JSON_UNQUOTE(JSON_EXTRACT(order_data.items, '$[0].item')) AS item_name,
-  //     JSON_UNQUOTE(JSON_EXTRACT(order_data.items, '$[0].amount')) AS item_quantity,
-  //     order_data.date, totalAmount, user_data.first_name, user_data.last_name, user_data.phone, user_data.mobile_number, user_data.email, user_data.address, user_data.shipping_address
-  //   FROM order_data
-  //   INNER JOIN user_data ON order_data.userId = user_data.id
-  // `;
 
   try {
     const result = await db.query(sql);
@@ -686,7 +677,6 @@ async function postProduct(product) {
 }
 
 async function getProduct(itemCode) {
-  // const productInfo = JSON.parse(itemCode);
   let sql = `SELECT * FROM inventory_data WHERE item_code = ?`;
   const values = [itemCode];
   const response = await db.query(sql,values);
