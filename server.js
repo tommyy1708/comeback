@@ -754,12 +754,13 @@ async function deleteCategory(categoryName) {
 }
 
 async function postCategory(category) {
-  const categoryInfo = JSON.parse(category);
-  let sql = `
-      INSERT INTO category_data
-  (categoryName)
-  VALUES (?) `;
-  const values = [categoryInfo.categoryName];
+  let sql = `INSERT INTO category_data
+  (categoryName, image)
+  VALUES (?,?) `;
+  const values = [
+    category.categoryName,
+    category.url
+  ];
 
   const response = await db.query(sql, values);
   if (response && response.length > 0) {

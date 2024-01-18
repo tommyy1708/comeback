@@ -54,12 +54,13 @@ const multer = require('multer')
 dotenv.config();
 const app = express();
 const cors = require('cors');
-const DatabasePort = process.env.DATABASE_PORT
-const DatabaseHost = process.env.DATABASE_HOST
+const ServerPort = process.env.SERVER_PORT;
+const ServerAddress = process.env.SERVER_ADDRESS
 app.use(cors());
 
 //allow app using json format in the createNote function
 app.use(express.json());
+
 app.use('/assets/images', express.static('public/assets/images'));
 
 // Start Set up multer for file upload
@@ -80,8 +81,19 @@ const upload = multer({ storage: storage });
 app.post('/api/images', upload.single('file'), (req, res) => {
   try {
     // Assuming you want to return the uploaded image URL
-    const imageUrl = `http://${DatabaseHost}:8000/assets/images/${req.file.filename}`;
-    res.json({ imageUrl });
+    const imageUrl = `http://${ServerAddress}:${ServerPort}/assets/images/${req.file.filename}`;
+    const imageName = req.file.filename;
+    const ogName = req.file.originalname;
+
+    res.send({
+      errCode: 0,
+      message: 'Upload Success!',
+      data: {
+        url: imageUrl,
+        name: imageName,
+        originName: ogName,
+      },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Image upload failed' });
@@ -1097,7 +1109,8 @@ app.post(`/api/supplier-category`, async (req, res) => {
       message: 'Something wrong',
     });
   } else {
-    const { params } = req.body;
+    const {params} = req.body;
+
     const response = await postCategory(params);
 
     if (!response) {
@@ -1108,7 +1121,7 @@ app.post(`/api/supplier-category`, async (req, res) => {
     } else {
       return res.send({
         errCode: 0,
-        message: 'Customer added successfully!',
+        message: 'Category add successfully!',
       });
     }
   }
