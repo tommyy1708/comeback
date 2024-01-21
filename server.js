@@ -679,7 +679,7 @@ async function postProduct(product) {
 async function getProduct(itemCode) {
   let sql = `SELECT * FROM inventory_data WHERE item_code = ?`;
   const values = [itemCode];
-  const response = await db.query(sql,values);
+  const response = await db.query(sql, values);
 
   if (response && response.length > 0) {
     return response[0];
@@ -711,13 +711,13 @@ async function updateSupplierAnnouncement(content) {
 }
 
 async function getSupplierUserList() {
-  let sql = `SELECT * FROM user_data`
-  const response = await db.query(sql)
-   if (response && response.length > 0) {
-     return response[0];
-   } else {
-     return false;
-   }
+  let sql = `SELECT * FROM user_data WHERE id != 1`;
+  const response = await db.query(sql);
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
 }
 async function deleteProduct(item) {
   let sql = `DELETE FROM inventory_data WHERE item_code = '${item}' `;
@@ -757,11 +757,21 @@ async function postCategory(category) {
   let sql = `INSERT INTO category_data
   (categoryName, image)
   VALUES (?,?) `;
-  const values = [
-    category.categoryName,
-    category.url
-  ];
+  const values = [category.categoryName, category.url];
 
+  const response = await db.query(sql, values);
+  if (response && response.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+async function adminChange(adminCode) {
+  const newAdmin = adminCode.admin === 1 ? 0 : 1;
+  let sql = `UPDATE user_data SET admin = ?
+             WHERE id = ?`;
+  const values = [newAdmin, adminCode.id];
   const response = await db.query(sql, values);
   if (response && response.length > 0) {
     return true;
@@ -815,4 +825,5 @@ module.exports = {
   deleteCustomer,
   deleteCategory,
   postCategory,
+  adminChange,
 };

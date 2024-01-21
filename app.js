@@ -48,6 +48,7 @@ const {
   deleteCustomer,
   deleteCategory,
   postCategory,
+  adminChange,
 } = require('./server.js');
 const path = require('path')
 const multer = require('multer')
@@ -529,6 +530,40 @@ app.put('/api/add-inventory-modify', async (req, res) => {
     });
   }
 });
+
+app.put(`/api/supplier-admin-change`, async (req, res) => {
+    if (!req.header('Authorization')) {
+    return 'token wrong';
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+
+    const params = req.body;
+   const response = await adminChange(params);
+
+  try {
+    if (response) {
+      res.send({
+        errCode: 0,
+        message: 'Change Success!',
+      });
+    }
+  } catch (error) {
+    res.send({
+      errCode: 1,
+      message: error,
+    });
+  }
+  }
+});
+
 //get total cost
 app.get('/api/total-cost', async (req, res) => {
   try {
