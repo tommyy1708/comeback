@@ -495,9 +495,10 @@ const verifyJwt = (token) => {
 //hair supplier Apis
 //Get user account information
 async function getSupplierUsers(email) {
+
   const rows = await db.query(
     `
-  SELECT *
+  SELECT id, admin,first_name, last_name, passWord, phone,address,email, shipping_address, mobile_number
   FROM user_data
   WHERE email=?
   `,

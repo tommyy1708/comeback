@@ -57,12 +57,22 @@ const app = express();
 const cors = require('cors');
 const ServerPort = process.env.SERVER_PORT;
 const ServerAddress = process.env.SERVER_ADDRESS
+
 app.use(cors());
 
 //allow app using json format in the createNote function
 app.use(express.json());
 
 app.use('/assets/images', express.static('public/assets/images'));
+// Function checkRole is part of role-based access control(RBAC)
+const checkRole = (requiredRole) => (req, res, next) => {
+  const userRoles = req.user.roles;
+  if (userRoles.includes(requiredRole)) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Permission denied' });
+  }
+};
 
 // Start Set up multer for file upload
 const storage = multer.diskStorage({
@@ -175,6 +185,7 @@ app.get(`/api/verify`, async (req, res) => {
     const token = authorizeHeader.slice(7);
 
     jwt.verify(token, 'laoniu');
+
     res.send({
       errCode: 0,
       status: true,
@@ -187,6 +198,41 @@ app.get(`/api/verify`, async (req, res) => {
       message: err.message,
     });
   }
+});
+
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+  const result = await getUsers(username);
+
+  if (result && result.length > 0) {
+    let passWord = result[0].password.toString();
+    let userName = result[0].username.toString();
+    let token = jwt.sign({ userName }, 'laoniu', { expiresIn: '1h' });
+    if (password === passWord) {
+      let latestUserData = await updateToken(token, username);
+      res.send({
+        errCode: 0,
+        message: 'Success!',
+        userInfo: [
+          {
+            userName: latestUserData[0].username,
+            token: latestUserData[0].token,
+          },
+        ],
+      });
+    } else {
+      res.send({
+        errCode: 1,
+        message: 'Password wrong!',
+      });
+    }
+  } else {
+    res.send({
+      errCode: 2,
+      message: 'No user',
+    });
+  }
+  return;
 });
 
 app.post(`/api/shopping-cart`, async (req, res) => {
@@ -229,39 +275,6 @@ app.post(`/api/shopping-cart`, async (req, res) => {
   }
 });
 
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-  const result = await getUsers(username);
-  if (result && result.length > 0) {
-    let passWord = result[0].password.toString();
-    let userName = result[0].username.toString();
-    let token = jwt.sign({ userName }, 'laoniu', { expiresIn: '1h' });
-    if (password === passWord) {
-      let latestUserData = await updateToken(token, username);
-      res.send({
-        errCode: 0,
-        message: 'Success!',
-        userInfo: [
-          {
-            userName: latestUserData[0].username,
-            token: latestUserData[0].token,
-          },
-        ],
-      });
-    } else {
-      res.send({
-        errCode: 1,
-        message: 'Password wrong!',
-      });
-    }
-  } else {
-    res.send({
-      errCode: 2,
-      message: 'No user',
-    });
-  }
-  return;
-});
 
 app.get('/api/products/:id', async (req, res) => {
   const item_code = req.params.id;
@@ -645,10 +658,12 @@ app.post('/api/supplier-login', async (req, res) => {
   }
 
   const sPassWord = aAccountInfo.passWord.toString();
-  const sUserEmail = aAccountInfo.email.toString();
+  // const sUserEmail = aAccountInfo.email.toString();
+  // const sUserAdmin = aAccountInfo.admin.toString();
+  // const userInfo = aAccountInfo.toString();
 
   if (aAccountInfo && password === sPassWord) {
-    let token = jwt.sign({ sUserEmail }, `${process.env.SECRET}`, {
+    let token = jwt.sign(aAccountInfo, `${process.env.SECRET}`, {
       expiresIn: '24h',
     });
 
@@ -656,7 +671,7 @@ app.post('/api/supplier-login', async (req, res) => {
     const updateLoginInfo = await updateTokenHairSupplier(
       token,
       email
-    );
+      );
 
     if (!updateLoginInfo) {
       res.send({
@@ -667,18 +682,19 @@ app.post('/api/supplier-login', async (req, res) => {
       res.send({
         errCode: 0,
         message: 'Success!',
-        data: {
-          token: updateLoginInfo.token,
-          first_name: updateLoginInfo.first_name,
-          last_name: updateLoginInfo.last_name,
-          admin: updateLoginInfo.admin,
-          id: updateLoginInfo.id,
-          phone: updateLoginInfo.phone,
-          mobile_number: updateLoginInfo.mobile_number,
-          address: updateLoginInfo.address,
-          shipping_address: updateLoginInfo.shipping_address,
-          email: updateLoginInfo.email,
-        },
+        userToken: updateLoginInfo.token.toString()
+        // data: {
+        //   token: updateLoginInfo.token,
+        // first_name: updateLoginInfo.first_name,
+        // last_name: updateLoginInfo.last_name,
+        // admin: updateLoginInfo.admin,
+        // id: updateLoginInfo.id,
+        // phone: updateLoginInfo.phone,
+        // mobile_number: updateLoginInfo.mobile_number,
+        // address: updateLoginInfo.address,
+        // shipping_address: updateLoginInfo.shipping_address,
+        // email: updateLoginInfo.email,
+        // },
       });
     }
   } else {
