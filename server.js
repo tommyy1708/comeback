@@ -701,11 +701,20 @@ async function getSupplierAnnouncement() {
 }
 
 async function updateSupplierAnnouncement(content) {
-  const key = 1;
-  let sql = `UPDATE announcement SET content = '${content}' WHERE \`key\` = '${key}'`;
+  let sql = `INSERT INTO announcement (content) VALUES (${content})`;
   const response = await db.query(sql);
   if (response && response.length > 0) {
-    return response[0];
+    return true;
+  } else {
+    return false;
+  }
+}
+async function DeleteSupplierAnnouncement(content) {
+  let sql = `DELETE FROM announcement WHERE id=${content}`;
+  const response = await db.query(sql);
+  if (response && response.length > 0) {
+
+    return true;
   } else {
     return false;
   }
@@ -827,4 +836,5 @@ module.exports = {
   deleteCategory,
   postCategory,
   adminChange,
+  DeleteSupplierAnnouncement,
 };

@@ -49,14 +49,15 @@ const {
   deleteCategory,
   postCategory,
   adminChange,
+  DeleteSupplierAnnouncement,
 } = require('./server.js');
-const path = require('path')
-const multer = require('multer')
+const path = require('path');
+const multer = require('multer');
 dotenv.config();
 const app = express();
 const cors = require('cors');
 const ServerPort = process.env.SERVER_PORT;
-const ServerAddress = process.env.SERVER_ADDRESS
+const ServerAddress = process.env.SERVER_ADDRESS;
 
 app.use(cors());
 
@@ -80,8 +81,8 @@ const storage = multer.diskStorage({
     cb(null, 'public/assets/images'); // Set the destination folder for image uploads
   },
   filename: function (req, file, cb) {
-      const timestamp = Date.now();
-      const filename = `${timestamp}_${file.originalname}`;
+    const timestamp = Date.now();
+    const filename = `${timestamp}_${file.originalname}`;
     cb(null, filename); // Keep the original filename
   },
 });
@@ -98,7 +99,7 @@ app.post('/api/images', upload.single('file'), (req, res) => {
 
     res.send({
       errCode: 0,
-      message: 'Upload Success!',
+      message: 'Upload Success',
       data: {
         url: imageUrl,
         name: imageName,
@@ -110,7 +111,6 @@ app.post('/api/images', upload.single('file'), (req, res) => {
     res.status(500).json({ error: 'Image upload failed' });
   }
 });
-
 
 // End Set up multer for file upload
 
@@ -212,7 +212,7 @@ app.post('/api/login', async (req, res) => {
       let latestUserData = await updateToken(token, username);
       res.send({
         errCode: 0,
-        message: 'Success!',
+        message: 'Success',
         userInfo: [
           {
             userName: latestUserData[0].username,
@@ -264,7 +264,7 @@ app.post(`/api/shopping-cart`, async (req, res) => {
     } else {
       res.send({
         errCode: 0,
-        message: 'Success!',
+        message: 'Success',
       });
     }
   } catch (err) {
@@ -274,7 +274,6 @@ app.post(`/api/shopping-cart`, async (req, res) => {
     });
   }
 });
-
 
 app.get('/api/products/:id', async (req, res) => {
   const item_code = req.params.id;
@@ -287,7 +286,7 @@ app.get('/api/products/:id', async (req, res) => {
   } else {
     res.send({
       errCode: 1,
-      message: 'Something wrong!',
+      message: 'Something wrong',
     });
   }
 });
@@ -387,7 +386,7 @@ app.post('/api/client', async (req, res) => {
     let result = await addingNewClient(req.body);
     res.send({
       errCode: 0,
-      message: 'Success!',
+      message: 'Success',
     });
   } catch (error) {
     res.send({
@@ -403,7 +402,7 @@ app.get('/api/client', async (req, res) => {
     res.send({
       errCode: 0,
       data: data,
-      message: 'Success!',
+      message: 'Success',
     });
   } catch (err) {
     res.send({
@@ -420,7 +419,7 @@ app.post('/api/shopping-cart/client_update/', async (req, res) => {
     res.send({
       errCode: 0,
       result: returnData,
-      message: 'Success!',
+      message: 'Success',
     });
   } catch (error) {
     res.send({
@@ -436,7 +435,7 @@ app.post('/api/add-inventory', async (req, res) => {
   try {
     res.send({
       errCode: 0,
-      message: 'Success!',
+      message: 'Success',
     });
   } catch (error) {
     res.send({
@@ -473,12 +472,12 @@ app.get('/api/add-inventory/:id', async (req, res) => {
     res.send({
       errCode: 0,
       data: result[0],
-      message: 'Success!',
+      message: 'Success',
     });
   } catch (error) {
     res.send({
       errCode: 1,
-      message: 'Something Wrong!',
+      message: 'Something wrong',
     });
   }
 });
@@ -545,7 +544,7 @@ app.put('/api/add-inventory-modify', async (req, res) => {
 });
 
 app.put(`/api/supplier-admin-change`, async (req, res) => {
-    if (!req.header('Authorization')) {
+  if (!req.header('Authorization')) {
     return 'token wrong';
   }
   const token = req.header('Authorization').slice(7);
@@ -557,23 +556,22 @@ app.put(`/api/supplier-admin-change`, async (req, res) => {
       message: 'Something wrong',
     });
   } else {
-
     const params = req.body;
-   const response = await adminChange(params);
+    const response = await adminChange(params);
 
-  try {
-    if (response) {
+    try {
+      if (response) {
+        res.send({
+          errCode: 0,
+          message: 'Change Success',
+        });
+      }
+    } catch (error) {
       res.send({
-        errCode: 0,
-        message: 'Change Success!',
+        errCode: 1,
+        message: error,
       });
     }
-  } catch (error) {
-    res.send({
-      errCode: 1,
-      message: error,
-    });
-  }
   }
 });
 
@@ -602,10 +600,10 @@ app.post('/api/add-new-product', async (req, res) => {
 
   res.send({
     errCode: 0,
-    message: 'Add new product success!',
+    message: 'Add new product Success',
   });
 });
-//!! working on
+
 app.get('/api/get-reports', async (req, res) => {
   const params = req.query;
   const begin = params.begin;
@@ -614,13 +612,13 @@ app.get('/api/get-reports', async (req, res) => {
   if (a_o_response) {
     res.send({
       errCode: 0,
-      message: 'Inquire success!',
+      message: 'Inquire Success',
       data: a_o_response,
     });
   } else {
     res.send({
       errCode: 1,
-      message: 'Something wrong!',
+      message: 'Something wrong',
     });
   }
 });
@@ -671,7 +669,7 @@ app.post('/api/supplier-login', async (req, res) => {
     const updateLoginInfo = await updateTokenHairSupplier(
       token,
       email
-      );
+    );
 
     if (!updateLoginInfo) {
       res.send({
@@ -681,8 +679,8 @@ app.post('/api/supplier-login', async (req, res) => {
     } else {
       res.send({
         errCode: 0,
-        message: 'Success!',
-        userToken: updateLoginInfo.token.toString()
+        message: 'Success',
+        userToken: updateLoginInfo.token.toString(),
         // data: {
         //   token: updateLoginInfo.token,
         // first_name: updateLoginInfo.first_name,
@@ -807,7 +805,7 @@ app.post(`/api/supplier-addNewOrder`, async (req, res) => {
   } else {
     res.send({
       errCode: 0,
-      message: 'Success!',
+      message: 'Success',
     });
   }
 });
@@ -956,7 +954,7 @@ app.get(`/api/supplier-product`, async (req, res) => {
     } else {
       return res.send({
         errCode: 0,
-        message: 'Get Product Success!',
+        message: 'Get Product Success',
         data: response,
       });
     }
@@ -988,7 +986,7 @@ app.delete(`/api/supplier-product/:itemCode`, async (req, res) => {
     } else {
       return res.send({
         errCode: 0,
-        message: 'Delete Product Success!',
+        message: 'Delete Product Success',
       });
     }
   }
@@ -1018,41 +1016,44 @@ app.delete(`/api/supplier-user/:id`, async (req, res) => {
     } else {
       return res.send({
         errCode: 0,
-        message: 'Delete Customer Success!',
+        message: 'Delete Customer Success',
       });
     }
   }
 });
-app.delete(`/api/supplier-category/:categoryName`, async (req, res) => {
-  if (!req.header('Authorization')) {
-    return;
-  }
-  const token = req.header('Authorization').slice(7);
-  const check = await supplierVerifyJwt(token);
+app.delete(
+  `/api/supplier-category/:categoryName`,
+  async (req, res) => {
+    if (!req.header('Authorization')) {
+      return;
+    }
+    const token = req.header('Authorization').slice(7);
+    const check = await supplierVerifyJwt(token);
 
-  if (!check) {
-    return res.send({
-      errCode: 1,
-      message: 'Something wrong',
-    });
-  } else {
-    const categoryName = req.params.categoryName;
-
-    const response = await deleteCategory(categoryName);
-
-    if (!response) {
+    if (!check) {
       return res.send({
         errCode: 1,
         message: 'Something wrong',
       });
     } else {
-      return res.send({
-        errCode: 0,
-        message: 'Delete Category Success!',
-      });
+      const categoryName = req.params.categoryName;
+
+      const response = await deleteCategory(categoryName);
+
+      if (!response) {
+        return res.send({
+          errCode: 1,
+          message: 'Something wrong',
+        });
+      } else {
+        return res.send({
+          errCode: 0,
+          message: 'Delete Category Success',
+        });
+      }
     }
   }
-});
+);
 
 app.get(`/api/supplier-ordersbydate`, async (req, res) => {
   if (!req.header('Authorization')) {
@@ -1080,21 +1081,16 @@ app.get(`/api/supplier-ordersbydate`, async (req, res) => {
 
 app.get(`/api/supplier-announcement`, async (req, res) => {
   const response = await getSupplierAnnouncement();
-  if (!response) {
-    return res.send({
-      errCode: 1,
-      message: 'no response on database!',
-    });
-  } else {
-    return res.send({
-      errCode: 0,
-      message: 'Success',
-      data: response,
-    });
-  }
+
+  return res.send({
+    errCode: 0,
+    message: 'Success',
+    data: response,
+  });
+  // }
 });
 
-app.put(`/api/supplier-announcement`, async (req, res) => {
+app.post(`/api/supplier-announcement`, async (req, res) => {
   if (!req.header('Authorization')) {
     return 'token wrong';
   }
@@ -1108,11 +1104,48 @@ app.put(`/api/supplier-announcement`, async (req, res) => {
     });
   } else {
     const { content } = req.body;
-    const response = await updateSupplierAnnouncement(content);
 
+    const response = await updateSupplierAnnouncement(content);
+    if (!response) {
+      res.send({
+        errCode: 1,
+        message: 'Something wrong',
+      });
+    }
     return res.send({
       errCode: 0,
       message: 'Success',
+    });
+  }
+});
+
+app.post(`/api/supplier-delete-announcement`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return 'token wrong';
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const { content } = req.body;
+
+    const response = await DeleteSupplierAnnouncement(content);
+    if (!response) {
+      res.send({
+        errCode: 1,
+        message: 'Something wrong',
+      });
+    }
+    const announces = await getSupplierAnnouncement();
+    return res.send({
+      errCode: 0,
+      message: 'Success',
+      data: announces,
     });
   }
 });
@@ -1160,7 +1193,7 @@ app.post(`/api/supplier-category`, async (req, res) => {
       message: 'Something wrong',
     });
   } else {
-    const {params} = req.body;
+    const { params } = req.body;
 
     const response = await postCategory(params);
 
@@ -1176,4 +1209,16 @@ app.post(`/api/supplier-category`, async (req, res) => {
       });
     }
   }
+});
+
+app.get(`/api/supplier-verify-token`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  if (!token) {
+    return false;
+  }
+
+  return supplierVerifyJwt(token);
 });
