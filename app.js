@@ -50,6 +50,7 @@ const {
   postCategory,
   adminChange,
   DeleteSupplierAnnouncement,
+  GetUserInfoById
 } = require('./server.js');
 const path = require('path');
 const multer = require('multer');
@@ -792,6 +793,58 @@ app.post(`/api/supplier-addNewOrder`, async (req, res) => {
   //processing order
   const { cartData, userId } = req.body;
 
+  const decodeCarData = JSON.parse(cartData);
+
+  function createTable(decodeCarData) {
+    const items = decodeCarData.items.map(
+      (item) => `
+    <tr>
+      <td>${item.item}</td>
+      <td>${item.price}</td>
+      <td>${item.quantity}</td>
+      <td>${item.cost}</td>
+    </tr>
+  `
+    );
+
+    return `
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Price ($)</th>
+          <th>Quantity</th>
+          <th>Total Cost ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.join('')}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3"><strong>Total Amount</strong></td>
+          <td>${decodeCarData.totalAmount}</td>
+        </tr>
+        <tr>
+          <td colspan="3"><strong>Subtotal</strong></td>
+          <td>${decodeCarData.subtotal}</td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
+  }
+  const tableHtml = createTable(decodeCarData);
+
+  const userInfo = await GetUserInfoById(userId);
+   const mailOptions = {
+     from: process.env.EMAIL_USERNAME,
+     to: userInfo[0].email,
+     subject: `Thank you for shopping with us. Here\'s your order #:${decodeCarData.order_number}`,
+     html: `We're going to processing your order within 1-3 business days : ${tableHtml}`,
+   };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+  })
   const result = await addToSupplierOrder(
     JSON.parse(cartData),
     userId
@@ -1087,36 +1140,36 @@ app.get(`/api/supplier-announcement`, async (req, res) => {
     message: 'Success',
     data: response,
   });
-  // }
 });
 
 app.post(`/api/supplier-announcement`, async (req, res) => {
-  if (!req.header('Authorization')) {
-    return 'token wrong';
-  }
-  const token = req.header('Authorization').slice(7);
-  const check = await supplierVerifyJwt(token);
+  // if (!req.header('Authorization')) {
+  //   return 'token wrong';
+  // }
+  // const token = req.header('Authorization').slice(7);
+  // const check = await supplierVerifyJwt(token);
 
-  if (!check) {
+  // if (!check) {
+  //   return res.send({
+  //     errCode: 1,
+  //     message: 'Something wrong',
+  //   });
+  // } else {
+  const { content } = req.body;
+
+  const response = await updateSupplierAnnouncement(content);
+
+  if (!response) {
     return res.send({
       errCode: 1,
       message: 'Something wrong',
     });
-  } else {
-    const { content } = req.body;
-
-    const response = await updateSupplierAnnouncement(content);
-    if (!response) {
-      res.send({
-        errCode: 1,
-        message: 'Something wrong',
-      });
-    }
-    return res.send({
-      errCode: 0,
-      message: 'Success',
-    });
   }
+  return res.send({
+    errCode: 0,
+    message: 'Success',
+  });
+  // }
 });
 
 app.post(`/api/supplier-delete-announcement`, async (req, res) => {
@@ -1213,12 +1266,12 @@ app.post(`/api/supplier-category`, async (req, res) => {
 
 app.get(`/api/supplier-verify-token`, async (req, res) => {
   if (!req.header('Authorization')) {
-    return;
+    return false;
   }
   const token = req.header('Authorization').slice(7);
   if (!token) {
     return false;
   }
 
-  return supplierVerifyJwt(token);
+  return supplierVerifyJwt(token);;
 });

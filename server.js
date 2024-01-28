@@ -529,6 +529,7 @@ async function getCategory() {
 //Verify supplier token
 const supplierVerifyJwt = (token) => {
   const verifyResult = jwt.verify(token, 'laoniu');
+
   if (!verifyResult) {
     return false;
   } else {
@@ -700,9 +701,9 @@ async function getSupplierAnnouncement() {
   }
 }
 
-async function updateSupplierAnnouncement(content) {
-  let sql = `INSERT INTO announcement (content) VALUES (${content})`;
-  const response = await db.query(sql);
+async function updateSupplierAnnouncement(notice) {
+  let sql = `INSERT INTO announcement (content) VALUES (?)`;
+  const response = await db.query(sql,[notice]);
   if (response && response.length > 0) {
     return true;
   } else {
@@ -790,6 +791,16 @@ async function adminChange(adminCode) {
   }
 }
 
+async function GetUserInfoById(userId) {
+  let sql = `SELECT * FROM user_data WHERE id = ${userId}`
+  const response = await db.query(sql);
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
+  }
+
 module.exports = {
   verifyJwt,
   getUsers,
@@ -837,4 +848,5 @@ module.exports = {
   postCategory,
   adminChange,
   DeleteSupplierAnnouncement,
+  GetUserInfoById,
 };
