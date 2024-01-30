@@ -594,7 +594,7 @@ async function addToSupplierOrder(cartData, userInfo) {
 //get order list from supplier database
 async function getSupplierOrderList() {
   const sql = `
-    SELECT order_data.order_number, order_data.items, order_data.date, totalAmount, user_data.first_name, user_data.last_name, user_data.phone, user_data.mobile_number, user_data.email, user_data.address, user_data.shipping_address
+    SELECT order_data.order_number, order_data.items, order_data.date, totalAmount, user_data.first_name, user_data.last_name, user_data.phone, user_data.mobile_number, user_data.email, user_data.address, user_data.shipping_address, status, userId
     FROM order_data
     INNER JOIN user_data ON order_data.userId = user_data.id
   `;
@@ -799,7 +799,22 @@ async function GetUserInfoById(userId) {
   } else {
     return false;
   }
-  }
+}
+
+async function updateSupplierOrderStatus(orderId) {
+  let sql = `UPDATE order_data
+             SET status='success'
+             WHERE order_number = ${orderId}
+  `;
+   const response = await db.query(sql);
+   if (response && response.length > 0) {
+     return response[0];
+   } else {
+     return false;
+   }
+}
+
+
 
 module.exports = {
   verifyJwt,
@@ -849,4 +864,5 @@ module.exports = {
   adminChange,
   DeleteSupplierAnnouncement,
   GetUserInfoById,
+  updateSupplierOrderStatus,
 };

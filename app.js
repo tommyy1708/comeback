@@ -50,7 +50,8 @@ const {
   postCategory,
   adminChange,
   DeleteSupplierAnnouncement,
-  GetUserInfoById
+  GetUserInfoById,
+  updateSupplierOrderStatus,
 } = require('./server.js');
 const path = require('path');
 const multer = require('multer');
@@ -836,15 +837,14 @@ app.post(`/api/supplier-addNewOrder`, async (req, res) => {
   const tableHtml = createTable(decodeCarData);
 
   const userInfo = await GetUserInfoById(userId);
-   const mailOptions = {
-     from: process.env.EMAIL_USERNAME,
-     to: userInfo[0].email,
-     subject: `Thank you for shopping with us. Here\'s your order #:${decodeCarData.order_number}`,
-     html: `We're going to processing your order within 1-3 business days : ${tableHtml}`,
-   };
+  const mailOptions = {
+    from: process.env.EMAIL_USERNAME,
+    to: userInfo[0].email,
+    subject: `Thank you for shopping with us. Here\'s your order #:${decodeCarData.order_number}`,
+    html: `We're going to processing your order within 1-3 business days : ${tableHtml}`,
+  };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-  })
+  transporter.sendMail(mailOptions, (error, info) => {});
   const result = await addToSupplierOrder(
     JSON.parse(cartData),
     userId
@@ -860,6 +860,56 @@ app.post(`/api/supplier-addNewOrder`, async (req, res) => {
       errCode: 0,
       message: 'Success',
     });
+  }
+});
+
+app.put(`/api/supplier-received`, async (req, res) => {
+  //verify token
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+  if (!check) {
+    res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const params = req.body;
+    const order_number = params.orderNumber;
+    const userId = params.userId;
+
+      const emailContent = `
+        <h1>Your Order is Being Processed</h1>
+      <p>Order number : ${order_number}</p>
+      <p>We're currently processing your order and will contact you soon by email with further details.</p>
+      <p>Thank you for your patience!</p>
+    `;
+
+    const userInfo = await GetUserInfoById(userId);
+
+    const mailOptions = {
+      from: process.env.EMAIL_USERNAME,
+      to: userInfo[0].email,
+      subject: `Your Order is Being Processed. order #:${order_number}`,
+      html: `${emailContent}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {});
+    const result = await updateSupplierOrderStatus(order_number);
+
+    if (!result) {
+      res.send({
+        errCode: 1,
+        message: 'Database wrong',
+      });
+    } else {
+      res.send({
+        errCode: 0,
+        message: 'Success',
+      });
+    }
   }
 });
 
@@ -1273,5 +1323,5 @@ app.get(`/api/supplier-verify-token`, async (req, res) => {
     return false;
   }
 
-  return supplierVerifyJwt(token);;
+  return supplierVerifyJwt(token);
 });
