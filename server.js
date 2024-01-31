@@ -777,6 +777,19 @@ async function postCategory(category) {
     return false;
   }
 }
+async function postBanner(image) {
+  let sql = `UPDATE banner_data
+  SET url = ?
+  WHERE id = 1`;
+  const values = [image.url];
+
+  const response = await db.query(sql, values);
+  if (response && response.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 async function adminChange(adminCode) {
   const newAdmin = adminCode.admin === 1 ? 0 : 1;
@@ -814,7 +827,11 @@ async function updateSupplierOrderStatus(orderId) {
    }
 }
 
-
+async function getBanner() {
+  const sql = `SELECT url FROM banner_data WHERE id=1`;
+  const response = await db.query(sql);
+  return response[0];
+}
 
 module.exports = {
   verifyJwt,
@@ -865,4 +882,6 @@ module.exports = {
   DeleteSupplierAnnouncement,
   GetUserInfoById,
   updateSupplierOrderStatus,
+  postBanner,
+  getBanner,
 };

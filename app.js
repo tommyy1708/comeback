@@ -52,6 +52,8 @@ const {
   DeleteSupplierAnnouncement,
   GetUserInfoById,
   updateSupplierOrderStatus,
+  postBanner,
+  getBanner
 } = require('./server.js');
 const path = require('path');
 const multer = require('multer');
@@ -658,9 +660,6 @@ app.post('/api/supplier-login', async (req, res) => {
   }
 
   const sPassWord = aAccountInfo.passWord.toString();
-  // const sUserEmail = aAccountInfo.email.toString();
-  // const sUserAdmin = aAccountInfo.admin.toString();
-  // const userInfo = aAccountInfo.toString();
 
   if (aAccountInfo && password === sPassWord) {
     let token = jwt.sign(aAccountInfo, `${process.env.SECRET}`, {
@@ -683,18 +682,6 @@ app.post('/api/supplier-login', async (req, res) => {
         errCode: 0,
         message: 'Success',
         userToken: updateLoginInfo.token.toString(),
-        // data: {
-        //   token: updateLoginInfo.token,
-        // first_name: updateLoginInfo.first_name,
-        // last_name: updateLoginInfo.last_name,
-        // admin: updateLoginInfo.admin,
-        // id: updateLoginInfo.id,
-        // phone: updateLoginInfo.phone,
-        // mobile_number: updateLoginInfo.mobile_number,
-        // address: updateLoginInfo.address,
-        // shipping_address: updateLoginInfo.shipping_address,
-        // email: updateLoginInfo.email,
-        // },
       });
     }
   } else {
@@ -880,7 +867,7 @@ app.put(`/api/supplier-received`, async (req, res) => {
     const order_number = params.orderNumber;
     const userId = params.userId;
 
-      const emailContent = `
+    const emailContent = `
         <h1>Your Order is Being Processed</h1>
       <p>Order number : ${order_number}</p>
       <p>We're currently processing your order and will contact you soon by email with further details.</p>
@@ -1314,6 +1301,37 @@ app.post(`/api/supplier-category`, async (req, res) => {
   }
 });
 
+app.post(`/api/supplier-banner`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return;
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const { params } = req.body;
+
+    const response = await postBanner(params);
+
+    if (!response) {
+      return res.send({
+        errCode: 1,
+        message: 'Add banner failed',
+      });
+    } else {
+      return res.send({
+        errCode: 0,
+        message: 'Banner add successfully!',
+      });
+    }
+  }
+});
+
 app.get(`/api/supplier-verify-token`, async (req, res) => {
   if (!req.header('Authorization')) {
     return false;
@@ -1324,4 +1342,20 @@ app.get(`/api/supplier-verify-token`, async (req, res) => {
   }
 
   return supplierVerifyJwt(token);
+});
+
+app.get(`/api/supplier-get-banner`, async (req, res) => {
+  const response = await getBanner();
+  if (response.length > 0) {
+    return res.send({
+      errCode: 0,
+      message: 'success',
+      data: response[0].url,
+    });
+  } else {
+    return res.send({
+      errCode: 1,
+      message: 'something went wrong',
+    });
+  }
 });
