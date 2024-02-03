@@ -495,7 +495,6 @@ const verifyJwt = (token) => {
 //hair supplier Apis
 //Get user account information
 async function getSupplierUsers(email) {
-
   const rows = await db.query(
     `
   SELECT id, admin,first_name, last_name, passWord, phone,address,email, shipping_address, mobile_number
@@ -703,7 +702,7 @@ async function getSupplierAnnouncement() {
 
 async function updateSupplierAnnouncement(notice) {
   let sql = `INSERT INTO announcement (content) VALUES (?)`;
-  const response = await db.query(sql,[notice]);
+  const response = await db.query(sql, [notice]);
   if (response && response.length > 0) {
     return true;
   } else {
@@ -714,7 +713,6 @@ async function DeleteSupplierAnnouncement(content) {
   let sql = `DELETE FROM announcement WHERE id=${content}`;
   const response = await db.query(sql);
   if (response && response.length > 0) {
-
     return true;
   } else {
     return false;
@@ -803,9 +801,21 @@ async function adminChange(adminCode) {
     return false;
   }
 }
+async function pauseChange(pauseCode) {
+  const newAdmin = pauseCode.admin === 1 ? 0 : 1;
+  let sql = `UPDATE user_data SET pause = ?
+             WHERE id = ?`;
+  const values = [newAdmin, pauseCode.id];
+  const response = await db.query(sql, values);
+  if (response && response.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 async function GetUserInfoById(userId) {
-  let sql = `SELECT * FROM user_data WHERE id = ${userId}`
+  let sql = `SELECT * FROM user_data WHERE id = ${userId}`;
   const response = await db.query(sql);
   if (response && response.length > 0) {
     return response[0];
@@ -819,18 +829,27 @@ async function updateSupplierOrderStatus(orderId) {
              SET status='success'
              WHERE order_number = ${orderId}
   `;
-   const response = await db.query(sql);
-   if (response && response.length > 0) {
-     return response[0];
-   } else {
-     return false;
-   }
+  const response = await db.query(sql);
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
 }
 
 async function getBanner() {
   const sql = `SELECT url FROM banner_data WHERE id=1`;
   const response = await db.query(sql);
   return response[0];
+}
+
+async function checkSupplierPause(userEmail) {
+  const response = await db.query(`SELECT pause FROM user_data WHERE email=?`,[userEmail]);
+  if (response && response.length > 0) {
+    return response[0];
+  } else {
+    return false;
+  }
 }
 
 module.exports = {
@@ -884,4 +903,6 @@ module.exports = {
   updateSupplierOrderStatus,
   postBanner,
   getBanner,
+  checkSupplierPause,
+  pauseChange,
 };

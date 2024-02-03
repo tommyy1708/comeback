@@ -53,7 +53,9 @@ const {
   GetUserInfoById,
   updateSupplierOrderStatus,
   postBanner,
-  getBanner
+  getBanner,
+  checkSupplierPause,
+  pauseChange,
 } = require('./server.js');
 const path = require('path');
 const multer = require('multer');
@@ -578,6 +580,38 @@ app.put(`/api/supplier-admin-change`, async (req, res) => {
     }
   }
 });
+//!!
+app.put(`/api/supplier-pause-change`, async (req, res) => {
+  if (!req.header('Authorization')) {
+    return 'token wrong';
+  }
+  const token = req.header('Authorization').slice(7);
+  const check = await supplierVerifyJwt(token);
+
+  if (!check) {
+    return res.send({
+      errCode: 1,
+      message: 'Something wrong',
+    });
+  } else {
+    const params = req.body;
+    const response = await pauseChange(params);
+
+    try {
+      if (response) {
+        res.send({
+          errCode: 0,
+          message: 'Change Success',
+        });
+      }
+    } catch (error) {
+      res.send({
+        errCode: 1,
+        message: error,
+      });
+    }
+  }
+});
 
 //get total cost
 app.get('/api/total-cost', async (req, res) => {
@@ -656,6 +690,21 @@ app.post('/api/supplier-login', async (req, res) => {
     return res.send({
       errCode: 1,
       message: 'User not exists',
+    });
+  }
+
+  const isPause = await checkSupplierPause(email);
+
+    if (!isPause) {
+      return res.send({
+        errCode: 1,
+        message: 'User not exists',
+      });
+    }
+  if (isPause[0].pause === 1) {
+    return res.send({
+      errCode: 2,
+      message: 'Account is paused. Please contact support.',
     });
   }
 
@@ -870,7 +919,7 @@ app.put(`/api/supplier-received`, async (req, res) => {
     const emailContent = `
         <h1>Your Order is Being Processed</h1>
       <p>Order number : ${order_number}</p>
-      <p>We're currently processing your order and will contact you soon by email with further details.</p>
+      <p>We're currently processing your order and will contact you soon by phone call or email with further details.</p>
       <p>Thank you for your patience!</p>
     `;
 
