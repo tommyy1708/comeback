@@ -56,9 +56,12 @@ const {
   getBanner,
   checkSupplierPause,
   pauseChange,
+  updateCSV,
 } = require('./server.js');
 const path = require('path');
 const multer = require('multer');
+const csvParser = require('csv-parser');
+const fs = require('fs');
 dotenv.config();
 const app = express();
 const cors = require('cors');
@@ -119,6 +122,109 @@ app.post('/api/images', upload.single('file'), (req, res) => {
 });
 
 // End Set up multer for file upload
+
+app.post(
+  `/api/upload-csv`,
+  upload.single('file'),
+  async (req, res) => {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    try {
+      res.json({
+        url: file.path,
+        message: 'File uploaded',
+      });
+      // Read the CSV file using csv-parser with tab separator
+      //!!
+      // fs.createReadStream(file.path, { encoding: 'utf-8' })
+      //   // .pipe(csvParser({ separator: '\t' }))
+      //   .pipe(
+      //     csvParser({
+      //       skipLines: 1,
+      //       headers: [
+      //         'item_code',
+      //         'item',
+      //         'stock',
+      //         'price',
+      //         'cost',
+      //         'category',
+      //         'quantity',
+      //       ],
+      //     })
+      //   )
+      //   .on('data', (row) => {
+      //     // Check for empty fields in each row
+      //     Object.entries(row).forEach(([key, value]) => {
+      //       if (!value || value.trim() === '') {
+      //         console.log(`Empty value found in column '${key}'`);
+      //       }
+      //     });
+      //     data.push(row);
+      //   })
+      //   .on('end', async () => {
+
+      //    await updateCSV(data);
+
+      //     // Respond with success message
+      //     res.json({
+      //       status: 'success',
+      //       message: 'File uploaded and database updated',
+      //     });
+      //   });
+    } catch (error) {
+      console.error('Error processing file:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+app.post(`/api/update-csv`, async (req, res) => {
+  const url = req.body.fileUrl;
+  const data = [];
+  fs.createReadStream(url, { encoding: 'utf-8' })
+    .pipe(
+      csvParser({
+        skipLines: 1,
+        headers: [
+          'item_code',
+          'item',
+          'stock',
+          'price',
+          'cost',
+          'category',
+          'quantity',
+        ],
+      })
+    )
+    .on('data', (row) => {
+      // Check for empty fields in each row
+      Object.entries(row).forEach(([key, value]) => {
+        if (!value || value.trim() === '') {
+          console.log(`Empty value found in column '${key}'`);
+        }
+      });
+      data.push(row);
+    })
+    .on('end', async () => {
+      console.log('data = ', data);
+      const response = await updateCSV(data);
+      if (!response) {
+        return res.send({
+          errCode: 1,
+          message: `update database failed`,
+        });
+      } else {
+        // Respond with success message
+        return res.json({
+          errCode: 0,
+          message: `update database success`,
+        });
+      }
+    });
+});
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -695,12 +801,12 @@ app.post('/api/supplier-login', async (req, res) => {
 
   const isPause = await checkSupplierPause(email);
 
-    if (!isPause) {
-      return res.send({
-        errCode: 1,
-        message: 'User not exists',
-      });
-    }
+  if (!isPause) {
+    return res.send({
+      errCode: 1,
+      message: 'User not exists',
+    });
+  }
   if (isPause[0].pause === 1) {
     return res.send({
       errCode: 2,

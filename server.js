@@ -844,11 +844,117 @@ async function getBanner() {
 }
 
 async function checkSupplierPause(userEmail) {
-  const response = await db.query(`SELECT pause FROM user_data WHERE email=?`,[userEmail]);
+  const response = await db.query(
+    `SELECT pause FROM user_data WHERE email=?`,
+    [userEmail]
+  );
   if (response && response.length > 0) {
     return response[0];
   } else {
     return false;
+  }
+}
+
+// async function updateCSV(data) {
+//   // Loop through the data and update the database
+//   console.log('back-',data)
+//   try {
+//     for (const row of data) {
+//       const itemCode = row.item_code;
+//       const itemName = row.item;
+//       const stock = row.stock;
+//       const price = row.price;
+//       const cost = row.cost;
+//       const category = row.category;
+
+//       // update or insert into the database based on item_code
+//       const [result] = await db.query(
+//         `INSERT INTO inventory_data (item_code, item, stock, price, cost, category)
+//          VALUES (?, ?, ?, ?, ?, ?)
+//          ON DUPLICATE KEY UPDATE
+//          item_code = VALUES(itemCode),
+//          item = VALUES(item),
+//          stock = VALUES(stock),
+//          price = VALUES(price),
+//          cost = VALUES(cost),
+//          category = VALUES(category)`,
+//         [itemCode, itemName, stock, price, cost, category]
+//       );
+//       if (result.affectedRows > 0 || result.changedRows > 0) {
+//         console.log(
+//           `Row with item_code ${itemCode} successfully updated or inserted.`
+//         );
+//         return true;
+//       } else {
+//         console.log(`No changes for row with item_code ${itemCode}.`);
+//         return false;
+//       }
+//     }
+
+//     console.log('All rows processed successfully.');
+//   } catch (error) {
+//     console.error('Error during database update:', error);
+//     throw error;
+//   } finally {
+//     db.releaseConnection();
+//   }
+// }
+
+async function updateCSV(data) {
+  // Initialize a set to keep track of seen item_codes
+  const seenItemCodes = new Set();
+
+  // Loop through the data and update the database
+  try {
+    for (const row of data) {
+      const itemCode = row.item_code;
+
+      // Check if this item_code has already been seen
+      if (seenItemCodes.has(itemCode)) {
+        console.log(`Skipping row with duplicate item_code:`, row);
+        continue;
+      }
+
+      // Add the current item_code to the set of seen item_codes
+      seenItemCodes.add(itemCode);
+
+      const itemName = row.item;
+      const stock = row.stock;
+      const price = row.price;
+      const cost = row.cost;
+      const category = row.category;
+      // Check if essential values are present, if not, skip this row
+      if (!itemCode || !itemName) {
+        console.log(
+          `Skipping row with missing item_code or item:`,
+          row
+        );
+        continue;
+      }
+      // update or insert into the database based on item_code
+      await db.query(
+        `INSERT INTO inventory_data (item_code, item, stock, price, cost, category)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+         item = VALUES(item),
+         stock = VALUES(stock),
+         price = VALUES(price),
+         cost = VALUES(cost),
+         category = VALUES(category)`,
+        [itemCode, itemName, stock, price, cost, category]
+      );
+      console.log(
+        `Row with item_code ${itemCode} successfully updated or inserted.`
+      );
+    }
+
+    console.log('All rows processed successfully.');
+    return true; // Return true outside the loop after all rows are processed
+  } catch (error) {
+    console.error('Error during database update:', error);
+    throw error;
+  } finally {
+    db.releaseConnection();
   }
 }
 
@@ -905,4 +1011,5 @@ module.exports = {
   getBanner,
   checkSupplierPause,
   pauseChange,
+  updateCSV,
 };
