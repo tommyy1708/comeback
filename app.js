@@ -686,7 +686,7 @@ app.put(`/api/supplier-admin-change`, async (req, res) => {
     }
   }
 });
-//!!
+
 app.put(`/api/supplier-pause-change`, async (req, res) => {
   if (!req.header('Authorization')) {
     return 'token wrong';
@@ -1068,6 +1068,7 @@ app.get(`/api/supplier-orders`, async (req, res) => {
     });
   } else {
     const aOrderList = await getSupplierOrderList();
+    console.log("🚀 ~ app.get ~ aOrderList:", aOrderList)
     if (!aOrderList) {
       return res.send({
         errCode: 1,

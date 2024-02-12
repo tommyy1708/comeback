@@ -205,8 +205,6 @@ async function addingDataToOrderData(
   status
 ) {
   // const newItems = JSON.stringify(items);
-  // console.log("🚀 ~ file: server.js:194 ~ newItems:", newItems)
-
   const response = await db.query(
     `INSERT INTO order_data (order_number, items, date, client, discount, totalAmount, subtotal, tax, total, casher, method,total_cost, profit, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -617,8 +615,12 @@ async function getSupplierUserInfo(id) {
 
 //supplier date picker from orders
 async function getSupplierOrderByDate(begin, end) {
-  let sqlReport =
-    'SELECT * FROM order_data WHERE date BETWEEN ? AND ?';
+  let sqlReport = `
+    SELECT order_data.order_number, order_data.items, order_data.date, totalAmount, user_data.first_name, user_data.last_name, user_data.phone, user_data.mobile_number, user_data.email, user_data.address, user_data.shipping_address, status, userId
+    FROM order_data
+    INNER JOIN user_data ON order_data.userId = user_data.id
+    WHERE date BETWEEN ? AND ?
+    `;
   const values = [begin, end];
   const a_report = await db.query(
     sqlReport,
@@ -802,7 +804,7 @@ async function adminChange(adminCode) {
   }
 }
 async function pauseChange(pauseCode) {
-  const newAdmin = pauseCode.admin === 1 ? 0 : 1;
+  const newAdmin = pauseCode.pause === 1 ? 0 : 1;
   let sql = `UPDATE user_data SET pause = ?
              WHERE id = ?`;
   const values = [newAdmin, pauseCode.id];
