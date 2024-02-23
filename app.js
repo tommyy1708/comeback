@@ -3,6 +3,12 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const Redis = require('ioredis');
+const redis = new Redis({
+  host: '127.0.0.1',
+  port: 6379,
+  maxRetriesPerRequest: 50,
+});
 const {
   getUsers,
   verifyJwt,
@@ -73,6 +79,35 @@ app.use(cors());
 //allow app using json format in the createNote function
 app.use(express.json());
 
+//clean cache function
+const cleanCache = (key) => {
+  redis.del(key, (err, reply) => {
+    if (err) {
+      console.error('Error cleaning cache:', err);
+    } else {
+      console.log('Cache cleaned:', reply);
+    }
+  });
+};
+
+// check cache function
+const checkCache = (req, res, next) => {
+  const { id } = req.params;
+
+  redis.get(`categoryList:${id}`, (err, data) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Internal Server Error');
+    }
+    if (data !== null) {
+      console.log('cache hit');
+      return res.send(JSON.parse(data));
+    }
+
+    next();
+  });
+};
+
 app.use('/assets/images', express.static('public/assets/images'));
 // Function checkRole is part of role-based access control(RBAC)
 const checkRole = (requiredRole) => (req, res, next) => {
@@ -137,43 +172,6 @@ app.post(
         url: file.path,
         message: 'File uploaded',
       });
-      // Read the CSV file using csv-parser with tab separator
-      //!!
-      // fs.createReadStream(file.path, { encoding: 'utf-8' })
-      //   // .pipe(csvParser({ separator: '\t' }))
-      //   .pipe(
-      //     csvParser({
-      //       skipLines: 1,
-      //       headers: [
-      //         'item_code',
-      //         'item',
-      //         'stock',
-      //         'price',
-      //         'cost',
-      //         'category',
-      //         'quantity',
-      //       ],
-      //     })
-      //   )
-      //   .on('data', (row) => {
-      //     // Check for empty fields in each row
-      //     Object.entries(row).forEach(([key, value]) => {
-      //       if (!value || value.trim() === '') {
-      //         console.log(`Empty value found in column '${key}'`);
-      //       }
-      //     });
-      //     data.push(row);
-      //   })
-      //   .on('end', async () => {
-
-      //    await updateCSV(data);
-
-      //     // Respond with success message
-      //     res.json({
-      //       status: 'success',
-      //       message: 'File uploaded and database updated',
-      //     });
-      //   });
     } catch (error) {
       console.error('Error processing file:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -217,6 +215,7 @@ app.post(`/api/update-csv`, async (req, res) => {
           message: `update database failed`,
         });
       } else {
+        cleanCache('category:*');
         // Respond with success message
         return res.json({
           errCode: 0,
@@ -869,35 +868,46 @@ app.get('/api/supplier-category', async (req, res) => {
   }
 });
 
-app.get('/api/supplier-category/:id', async (req, res) => {
-  if (!req.header('Authorization')) {
-    return;
-  }
-  const token = req.header('Authorization').slice(7);
-  const check = await supplierVerifyJwt(token);
-  if (!check) {
-    res.send({
-      errCode: 1,
-      message: 'Something wrong',
-    });
-  } else {
-    const category = req.params.id;
-
-    const aCategoryList = await getSupplierCategoryList(category);
-    if (!aCategoryList) {
+app.get(
+  '/api/supplier-category/:id',
+  checkCache,
+  async (req, res) => {
+    if (!req.header('Authorization')) {
+      return;
+    }
+    const token = req.header('Authorization').slice(7);
+    const check = await supplierVerifyJwt(token);
+    if (!check) {
       res.send({
         errCode: 1,
-        message: 'server wrong',
+        message: 'Something wrong',
       });
     } else {
-      res.send({
-        errCode: 0,
-        message: 'Success',
-        data: aCategoryList,
-      });
+      const category = req.params.id;
+
+      console.log('cache not hit');
+      const aCategoryList = await getSupplierCategoryList(category);
+      if (!aCategoryList) {
+        res.send({
+          errCode: 1,
+          message: 'server wrong',
+        });
+      } else {
+        let cacheData = {
+          errCode: 0,
+          message: 'Success',
+          data: aCategoryList,
+        };
+        redis.setex(
+          `categoryList:${category}`,
+          3600,
+          JSON.stringify(cacheData)
+        );
+        res.send(cacheData);
+      }
     }
   }
-});
+);
 
 app.put('/api/passwordUpdate', async (req, res) => {
   const params = req.body;
@@ -976,9 +986,11 @@ app.post(`/api/supplier-addNewOrder`, async (req, res) => {
     </table>
   `;
   }
+
   const tableHtml = createTable(decodeCarData);
 
   const userInfo = await GetUserInfoById(userId);
+
   const mailOptions = {
     from: process.env.EMAIL_USERNAME,
     to: userInfo[0].email,
@@ -1068,7 +1080,6 @@ app.get(`/api/supplier-orders`, async (req, res) => {
     });
   } else {
     const aOrderList = await getSupplierOrderList();
-    console.log("🚀 ~ app.get ~ aOrderList:", aOrderList)
     if (!aOrderList) {
       return res.send({
         errCode: 1,
@@ -1167,6 +1178,8 @@ app.post(`/api/supplier-product`, async (req, res) => {
         message: 'Add new product failed',
       });
     } else {
+      // Clean the cache for the specific category
+      cleanCache(`category:${params.category}`);
       return res.send({
         errCode: 0,
         message: 'New Product add successfully!',
@@ -1512,6 +1525,27 @@ app.get(`/api/supplier-get-banner`, async (req, res) => {
     return res.send({
       errCode: 1,
       message: 'something went wrong',
+    });
+  }
+});
+
+app.get(`/api/test-api`, checkCache, async (req, res) => {
+  // Route that uses caching
+  const { category } = req.query;
+  console.log('cache not hit');
+  const aCategoryList = await getSupplierCategoryList(category);
+  redis.setex(category, 36000, JSON.stringify(aCategoryList));
+
+  if (!aCategoryList) {
+    res.send({
+      errCode: 1,
+      message: 'server wrong',
+    });
+  } else {
+    res.send({
+      errCode: 0,
+      message: 'Success',
+      data: aCategoryList,
     });
   }
 });
